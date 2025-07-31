@@ -32,8 +32,10 @@ data class User(
     @Enumerated(EnumType.STRING)
     val role: Role,
 
+    @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
     val studentProfile: StudentProfile? = null,
 
+    @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
     val teacherProfile: TeacherProfile? = null,
 )
 
