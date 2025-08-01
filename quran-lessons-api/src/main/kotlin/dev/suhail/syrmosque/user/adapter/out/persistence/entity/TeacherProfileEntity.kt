@@ -1,21 +1,20 @@
-package dev.suhail.syrmosque.quran.juz
+package dev.suhail.syrmosque.user.adapter.out.persistence.entity
 
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.OneToOne
 
 @Entity
-@Table(name = "juz")
-class Juz (
+class TeacherProfileEntity (
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    val name: String,
 
-    val arabicName: String,
-
-    val index: Int
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    val user: UserEntity
 )

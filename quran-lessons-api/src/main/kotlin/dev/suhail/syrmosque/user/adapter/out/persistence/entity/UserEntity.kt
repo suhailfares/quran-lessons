@@ -1,11 +1,12 @@
-package dev.suhail.syrmosque.user
+package dev.suhail.syrmosque.user.adapter.out.persistence.entity
 
+import dev.suhail.syrmosque.user.domain.model.Role
 import jakarta.persistence.*
 import java.time.LocalDate
 
 @Entity
 @Table(name = "users")
-data class User(
+data class UserEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
@@ -33,12 +34,8 @@ data class User(
     val role: Role,
 
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val studentProfile: StudentProfile? = null,
+    val studentProfile: StudentProfileEntity? = null,
 
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val teacherProfile: TeacherProfile? = null,
+    val teacherProfile: TeacherProfileEntity? = null,
 )
-
-enum class Role {
-    ADMIN, TEACHER, STUDENT
-}
