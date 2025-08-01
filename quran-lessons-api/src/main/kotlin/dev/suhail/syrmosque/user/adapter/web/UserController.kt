@@ -3,6 +3,7 @@ package dev.suhail.syrmosque.user.adapter.web
 import dev.suhail.syrmosque.user.adapter.web.dto.RegisterUserRequest
 import dev.suhail.syrmosque.user.adapter.web.dto.RegisterUserResponse
 import dev.suhail.syrmosque.user.port.RegisterUserUseCase
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -15,8 +16,9 @@ class UserController(
     private val registerUserUseCase: RegisterUserUseCase
 ) {
 
-    @PostMapping("/register")
+    @PostMapping
     fun register(@RequestBody request: RegisterUserRequest): ResponseEntity<RegisterUserResponse> {
         val user = registerUserUseCase.register(request.toCommand())
+        return ResponseEntity.status(HttpStatus.OK).body(RegisterUserResponse.from(user))
     }
 }

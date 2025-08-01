@@ -1,0 +1,13 @@
+### REGISTER USER
+
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "name": "Suhail",
+  "lastName": "Ahmad",
+  "username": "suhail123",
+  "birthday": "2001-07-15",
+  "email": "suhail@example.com",
+  "password": "securePassword123"
+}
