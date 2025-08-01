@@ -1,6 +1,6 @@
-package dev.suhail.syrmosque.user.adapter.out.persistence.entity
+package dev.suhail.syrmosque.user.adapter.persistence.entity
 
-import dev.suhail.syrmosque.user.domain.model.Role
+import dev.suhail.syrmosque.user.domain.Role
 import jakarta.persistence.*
 import java.time.LocalDate
 

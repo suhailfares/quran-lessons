@@ -1,8 +1,8 @@
 package dev.suhail.syrmosque.lesson.adapter.out.persistence.entity
 
 import dev.suhail.syrmosque.lesson.domain.model.LessonType
-import dev.suhail.syrmosque.user.adapter.out.persistence.entity.TeacherProfileEntity
-import dev.suhail.syrmosque.user.adapter.out.persistence.entity.UserEntity
+import dev.suhail.syrmosque.user.adapter.persistence.entity.TeacherProfileEntity
+import dev.suhail.syrmosque.user.adapter.persistence.entity.UserEntity
 import jakarta.persistence.*
 import java.time.LocalDate
 

@@ -1,4 +1,4 @@
-package dev.suhail.syrmosque.user.domain.model
+package dev.suhail.syrmosque.user.domain
 
 data class TeacherProfile(
     val id: Long = 0,
