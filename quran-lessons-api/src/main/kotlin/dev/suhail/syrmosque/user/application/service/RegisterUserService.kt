@@ -3,7 +3,7 @@ package dev.suhail.syrmosque.user.application.service
 import dev.suhail.syrmosque.user.application.command.RegisterUserCommand
 import dev.suhail.syrmosque.user.domain.Role
 import dev.suhail.syrmosque.user.domain.User
-import dev.suhail.syrmosque.user.port.RegisterUserUseCase
+import dev.suhail.syrmosque.user.application.usecase.RegisterUserUseCase
 import dev.suhail.syrmosque.user.port.UserRepository
 import org.springframework.stereotype.Service
 
