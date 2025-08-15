@@ -9,7 +9,7 @@
 
 - setup feature structure
 - can register user
-- user is registered with role USER
+- user registered as a student or a teacher
 
 # AUTH
  
