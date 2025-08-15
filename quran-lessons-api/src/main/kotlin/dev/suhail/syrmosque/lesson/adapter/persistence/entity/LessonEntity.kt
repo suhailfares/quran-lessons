@@ -1,4 +1,4 @@
-package dev.suhail.syrmosque.lesson.adapter.out.persistence.entity
+package dev.suhail.syrmosque.lesson.adapter.persistence.entity
 
 import dev.suhail.syrmosque.lesson.domain.model.LessonType
 import dev.suhail.syrmosque.user.adapter.persistence.entity.TeacherProfileEntity

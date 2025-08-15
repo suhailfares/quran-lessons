@@ -6,8 +6,10 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
 
 @Entity
+@Table(name = "teacher_profiles")
 class TeacherProfileEntity (
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

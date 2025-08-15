@@ -1,4 +1,4 @@
-package dev.suhail.syrmosque.lesson.adapter.out.persistence.entity
+package dev.suhail.syrmosque.lesson.adapter.persistence.entity
 
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
