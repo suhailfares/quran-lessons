@@ -5,9 +5,10 @@ Content-Type: application/json
 
 {
   "name": "Suhail",
-  "lastName": "Ahmad",
+  "lastName": "Fares",
   "username": "suhail123",
   "birthday": "2001-07-15",
   "email": "suhail@example.com",
-  "password": "securePassword123"
+  "password": "securePassword123",
+  "role": "STUDENT"
 }

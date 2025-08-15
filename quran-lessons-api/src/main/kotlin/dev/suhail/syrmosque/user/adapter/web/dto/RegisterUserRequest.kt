@@ -1,6 +1,7 @@
 package dev.suhail.syrmosque.user.adapter.web.dto
 
 import dev.suhail.syrmosque.user.application.command.RegisterUserCommand
+import dev.suhail.syrmosque.user.domain.Role
 import java.time.LocalDate
 
 data class RegisterUserRequest (
@@ -10,8 +11,9 @@ data class RegisterUserRequest (
     val birthday: LocalDate,
     val email: String,
     val password: String,
+    val role: Role
 ) {
     fun toCommand() = RegisterUserCommand(
-        name, lastName, username, birthday, email, password,
+        name, lastName, username, birthday, email, password, role
     )
 }
