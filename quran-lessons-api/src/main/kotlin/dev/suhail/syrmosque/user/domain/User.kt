@@ -11,6 +11,29 @@ data class User(
     val email: String,
     val password: String,
     val role: Role,
-    val studentProfile: StudentProfile? = null,
-    val teacherProfile: TeacherProfile? = null
-)
+    var studentProfile: StudentProfile? = null,
+    var teacherProfile: TeacherProfile? = null
+){
+    val fullName: String = "$name $lastName"
+
+    private fun assignStudentProfile(profile: StudentProfile): StudentProfile {
+        if (this.studentProfile != null) return this.studentProfile!!
+        if (this.role == Role.TEACHER) throw IllegalArgumentException("A Teacher must not have a student profile")
+        studentProfile = profile
+        return studentProfile!!
+    }
+
+    private fun assignTeacherProfile(profile: TeacherProfile): TeacherProfile {
+        if (this.teacherProfile != null) return this.teacherProfile!!
+        if (this.role == Role.STUDENT) throw IllegalArgumentException("A Student must not have a teacher profile")
+        teacherProfile = profile
+        return teacherProfile!!
+    }
+
+
+
+}
+
+enum class Role {
+    ADMIN, TEACHER, STUDENT, USER
+}
