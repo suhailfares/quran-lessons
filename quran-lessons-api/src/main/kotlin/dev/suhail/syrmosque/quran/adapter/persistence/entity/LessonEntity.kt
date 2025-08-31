@@ -1,6 +1,5 @@
-package dev.suhail.syrmosque.lesson.adapter.persistence.entity
+package dev.suhail.syrmosque.quran.adapter.persistence.entity
 
-import dev.suhail.syrmosque.lesson.domain.model.LessonType
 import dev.suhail.syrmosque.user.adapter.persistence.entity.TeacherProfileEntity
 import dev.suhail.syrmosque.user.adapter.persistence.entity.UserEntity
 import jakarta.persistence.*
@@ -15,8 +14,6 @@ class LessonEntity(
     val name: String,
 
     val arabicName: String,
-
-    val lessonType: LessonType,
 
     @ManyToOne
     @JoinColumn(name = "teacher_id")
