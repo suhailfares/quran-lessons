@@ -1,4 +1,4 @@
-package dev.suhail.syrmosque.quran
+package dev.suhail.syrmosque.quran.domain
 
 class SurahProgress (
     val id: Long = 0,
