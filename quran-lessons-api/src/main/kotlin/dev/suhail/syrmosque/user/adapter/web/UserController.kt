@@ -1,7 +1,7 @@
 package dev.suhail.syrmosque.user.adapter.web
 
-import dev.suhail.syrmosque.user.adapter.web.dto.RegisterUserRequest
-import dev.suhail.syrmosque.user.adapter.web.dto.RegisterUserResponse
+import dev.suhail.syrmosque.security.dto.RegisterUserRequest
+import dev.suhail.syrmosque.security.dto.RegisterUserResponse
 import dev.suhail.syrmosque.user.application.usecase.RegisterUserUseCase
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity

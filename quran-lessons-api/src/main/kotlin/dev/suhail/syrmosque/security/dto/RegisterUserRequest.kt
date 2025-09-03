@@ -1,4 +1,4 @@
-package dev.suhail.syrmosque.user.adapter.web.dto
+package dev.suhail.syrmosque.security.dto
 
 import dev.suhail.syrmosque.user.application.command.RegisterUserCommand
 import dev.suhail.syrmosque.user.domain.Role
