@@ -2,6 +2,8 @@ package dev.suhail.syrmosque
 
 import dev.suhail.syrmosque.quran.domain.Juz
 import dev.suhail.syrmosque.quran.domain.Surah
+import dev.suhail.syrmosque.quran.domain.SurahProgress
+import dev.suhail.syrmosque.quran.domain.SurahProgressStatus
 import dev.suhail.syrmosque.quran.domain.Verse
 import dev.suhail.syrmosque.user.domain.Role
 import dev.suhail.syrmosque.user.domain.StudentProfile
@@ -25,6 +27,7 @@ fun main(){
 
     amma.surahs = listOf(fatihah)
 
-    println(amma.name)
-    println(fatihah.verses)
+    sp1.quranProgress = listOf<SurahProgress>(SurahProgress(surahId = fatihah.id, status = SurahProgressStatus.LEARNING, reachedVerseId = fatihahVerse1.id))
+
+    println(suhail.studentProfile?.quranProgress?.first()?.reachedVerseId)
 }
