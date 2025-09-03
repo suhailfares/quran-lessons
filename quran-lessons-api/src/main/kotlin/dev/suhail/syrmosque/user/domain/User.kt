@@ -16,14 +16,14 @@ data class User(
 ){
     val fullName: String = "$name $lastName"
 
-    private fun assignStudentProfile(profile: StudentProfile): StudentProfile {
+    fun assignStudentProfile(profile: StudentProfile): StudentProfile {
         if (this.studentProfile != null) return this.studentProfile!!
         if (this.role == Role.TEACHER) throw IllegalArgumentException("A Teacher must not have a student profile")
         studentProfile = profile
         return studentProfile!!
     }
 
-    private fun assignTeacherProfile(profile: TeacherProfile): TeacherProfile {
+    fun assignTeacherProfile(profile: TeacherProfile): TeacherProfile {
         if (this.teacherProfile != null) return this.teacherProfile!!
         if (this.role == Role.STUDENT) throw IllegalArgumentException("A Student must not have a teacher profile")
         teacherProfile = profile
