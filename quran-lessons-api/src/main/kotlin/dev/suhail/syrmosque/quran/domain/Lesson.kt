@@ -10,5 +10,11 @@ data class Lesson(
     val teacherProfileId: Long? = null,
     val studentIds: List<Long>,
     val surahId: Long,
-    val date: LocalDate
+    val date: LocalDate,
+    val status: LessonStatus
 )
+
+enum class LessonStatus {
+    UPCOMING,
+    COMPLETED
+}
