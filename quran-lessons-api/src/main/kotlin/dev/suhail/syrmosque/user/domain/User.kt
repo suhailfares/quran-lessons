@@ -12,7 +12,7 @@ data class User(
     val password: String,
     val role: Role,
     var studentProfile: StudentProfile? = null,
-    var teacherProfile: TeacherProfile? = null
+    var teacherProfile: TeacherProfile? = null,
 ){
     val fullName: String = "$name $lastName"
 
