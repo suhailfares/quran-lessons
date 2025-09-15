@@ -1,0 +1,51 @@
+{
+  "username": {
+    "type": "string",
+    "required": true,
+    "max_length": 150,
+    "example": "imam123"
+  },
+  "email": {
+    "type": "string",
+    "format": "email",
+    "required": true,
+    "example": "imam@example.com"
+  },
+  "first_name": {
+    "type": "string",
+    "required": true,
+    "max_length": 100,
+    "example": "Ahmed"
+  },
+  "last_name": {
+    "type": "string",
+    "required": true,
+    "max_length": 100,
+    "example": "Hassan"
+  },
+  "phone_number": {
+    "type": "string",
+    "required": true,
+    "max_length": 20,
+    "example": "+971501234567"
+  },
+  "mosque_name": {
+    "type": "string",
+    "required": false,
+    "max_length": 150,
+    "example": "Al Noor Mosque"
+  },
+  "role": {
+    "type": "string",
+    "enum": ["admin", "teacher"],
+    "required": true,
+    "example": "teacher"
+  },
+  "password": {
+    "type": "string",
+    "required": true,
+    "write_only": true,
+    "min_length": 8,
+    "example": "StrongPass!123"
+  }
+}
