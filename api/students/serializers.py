@@ -18,3 +18,4 @@ class StudentSerializer(serializers.ModelSerializer):
             "birth_place", "school", "created_at",
             "teacher", "teacher_id"
         ]
+
