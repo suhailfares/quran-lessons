@@ -1,0 +1,12 @@
+{
+  "first_name": "Ahmad",
+  "last_name": "Fares",
+  "father_name": "Jamil Fares",
+  "mother_name": "Fatima Haj Omar",
+  "date_of_birth": "1980-05-15",
+  "phone_number": "+97155555555",
+  "parent_phone_number": "+97154444444",
+  "birth_place": "Latakia",
+  "school": "Al Karameh",
+  "_____COMMENT": "For this to work the user making the request NEEDS to be logged in and NEEDS to have the TEACHER role"
+}
