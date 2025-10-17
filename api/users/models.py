@@ -9,6 +9,8 @@ class User(AbstractUser):
 
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
+    # institute will later become its own model
+    institute = models.CharField(max_length=100, blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     mosque_name = models.CharField(max_length=150, blank=True, null=True)
 
@@ -19,7 +21,7 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
 
     USERNAME_FIELD = "username"
-    REQUIRED_FIELDS = ["email", "first_name", "last_name", "phone_number"]
+    REQUIRED_FIELDS = ["first_name", "last_name", "phone_number"]
 
     def __str__(self):
         return f"{self.username} ({self.role})"
