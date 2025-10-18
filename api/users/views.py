@@ -12,3 +12,8 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action in ["create", "update", "partial_update"]:
             return UserCreateSerializer
         return UserReadSerializer
+
+    def get_permissions(self):
+        if self.action == "create":
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated]

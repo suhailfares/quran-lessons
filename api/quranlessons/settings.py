@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework', # Added for DRF
     'users', # Users like teachers
-    'students' # Students 
+    'students', # Students
+    'quran', # Hifz, Surahs, Ayaat
 ]
 
 MIDDLEWARE = [
