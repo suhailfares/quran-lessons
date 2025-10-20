@@ -5,6 +5,8 @@ from django.db import models
 class Part(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
+    arName = models.CharField(max_length=100, blank=True)
+    number = models.PositiveIntegerField()
 
     def __str__(self):
         return self.name
@@ -12,6 +14,8 @@ class Part(models.Model):
 class Chapter(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
+    arName = models.CharField(max_length=100, blank=True)
+    number = models.PositiveIntegerField()
     parts = models.ManyToManyField(
         Part,
         related_name="chapters",
@@ -25,7 +29,6 @@ class Verse(models.Model):
         on_delete=models.PROTECT,
         related_name="verses",
     )
-
     number = models.PositiveIntegerField()
     text = models.TextField
 
