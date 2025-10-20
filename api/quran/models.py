@@ -4,23 +4,24 @@ from django.db import models
 
 class Part(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
-    arName = models.CharField(max_length=100, blank=True)
-    number = models.PositiveIntegerField()
+    title = models.CharField(max_length=100)
+    arTitle = models.CharField(max_length=100, blank=True)
+    index = models.PositiveIntegerField()
 
     def __str__(self):
-        return self.name
+        return self.title
 
 class Chapter(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
-    arName = models.CharField(max_length=100, blank=True)
-    number = models.PositiveIntegerField()
+    title = models.CharField(max_length=100)
+    arTitle = models.CharField(max_length=100, blank=True)
+    index = models.PositiveIntegerField()
     parts = models.ManyToManyField(
         Part,
         related_name="chapters",
         blank=False
     )
+    totalVerses = models.PositiveIntegerField(default=0)
 
 class Verse(models.Model):
     id = models.AutoField(primary_key=True)
@@ -29,12 +30,12 @@ class Verse(models.Model):
         on_delete=models.PROTECT,
         related_name="verses",
     )
-    number = models.PositiveIntegerField()
-    text = models.TextField
+    index = models.PositiveIntegerField()
+    text = models.TextField(blank=True)
 
     class Meta:
-        unique_together= ("chapter", "number")
-        ordering = ["chapter_id", "number"]
+        unique_together= ("chapter", "index")
+        ordering = ["chapter_id", "index"]
 
     def __str__(self):
-        return f"{self.chapter.name} - {self.number}"
+        return f"{self.chapter.title} - {self.index}"
