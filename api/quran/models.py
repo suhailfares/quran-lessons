@@ -35,6 +35,8 @@ class Verse(models.Model):
         Part,
         on_delete=models.PROTECT,
         related_name="verses",
+        null=True,
+        blank=True
     )
 
     index = models.PositiveIntegerField()
