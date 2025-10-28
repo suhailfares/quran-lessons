@@ -15,14 +15,15 @@ class IsTeacher(permissions.BasePermission):
         return request.user.is_authenticated and request.user.role == "teacher"
 
 class StudentViewSet(viewsets.ModelViewSet):
-    queryset = Student.objects.all()
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def get_queryset(self):
+        return Student.objects.filter(teacher=self.request.user)
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
             return StudentReadSerializer
         return StudentWriteSerializer
-
 
     def perform_create(self, serializer):
         serializer.save(teacher=self.request.user)

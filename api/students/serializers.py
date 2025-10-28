@@ -13,7 +13,6 @@ class StudentWriteSerializer(serializers.ModelSerializer):
 
 
 class StudentReadSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Student
         fields = [
