@@ -3,6 +3,8 @@ from django.shortcuts import render
 # Create your views here.
 
 from rest_framework import viewsets
+from rest_framework.exceptions import PermissionDenied
+
 from .models import Student
 from rest_framework import permissions
 from .serializers import StudentReadSerializer, StudentWriteSerializer
@@ -27,3 +29,14 @@ class StudentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(teacher=self.request.user)
+
+    def perform_update(self, serializer):
+        student = self.get_object()
+        if student.teacher != self.request.user:
+            raise PermissionDenied("You can only edit your own students.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if instance.teacher != self.request.user:
+            PermissionDenied("You can only delete your own student")
+        instance.delete()
