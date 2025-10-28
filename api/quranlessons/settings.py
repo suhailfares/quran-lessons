@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'users', # Users like teachers
     'students', # Students
     'quran', # Hifz, Surahs, Ayaat
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
 ]
 
 MIDDLEWARE = [
@@ -128,6 +130,13 @@ AUTH_USER_MODEL = 'users.User' # Custom user model
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication", 
-    )
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Quran Institute API",
+    "DESCRIPTION": "API for the Latakia Quran Institute (Jamil Fares | Suhail Fares)",
+    "VERSION": "1.0.0",
 }
