@@ -7,25 +7,23 @@ from rest_framework.exceptions import PermissionDenied
 
 from .models import Student
 from rest_framework import permissions
-from .serializers import StudentReadSerializer, StudentWriteSerializer
 
+from .permissions import IsTeacher
+from .serializers import StudentSerializer
+
+"""
 class IsTeacher(permissions.BasePermission):
-    """
-       Custom permission to allow only teachers to create/manage students.
-    """
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role == "teacher"
+"""
 
 class StudentViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
+    serializer_class = StudentSerializer
 
     def get_queryset(self):
         return Student.objects.filter(teacher=self.request.user)
 
-    def get_serializer_class(self):
-        if self.action in ["list", "retrieve"]:
-            return StudentReadSerializer
-        return StudentWriteSerializer
 
     def perform_create(self, serializer):
         serializer.save(teacher=self.request.user)
@@ -40,3 +38,10 @@ class StudentViewSet(viewsets.ModelViewSet):
         if instance.teacher != self.request.user:
             PermissionDenied("You can only delete your own student")
         instance.delete()
+
+    """
+    def get_serializer_class(self):
+        if self.action in ["list", "retrieve"]:
+            return StudentReadSerializer
+        return StudentWriteSerializer
+    """

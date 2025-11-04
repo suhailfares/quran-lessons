@@ -21,3 +21,24 @@ class StudentReadSerializer(serializers.ModelSerializer):
             "birth_place", "school", "created_at",
             "teacher_id"
         ]
+
+
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = [
+            "id",
+            "first_name",
+            "last_name",
+            "father_name",
+            "mother_name",
+            "date_of_birth",
+            "phone_number",
+            "parent_phone_number",
+            "birth_place",
+            "school",
+            "teacher",
+            "teacher_id",
+            "created_at",
+        ]
+        read_only_fields = ["id", "teacher", "teacher_id", "created_at"]
