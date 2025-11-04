@@ -24,7 +24,7 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ["first_name", "last_name", "phone_number"]
 
     def __str__(self):
-        return f"{self.username} ({self.role})"
+        return f"{self.first_name} {self.last_name}"
 
 
     class Meta:

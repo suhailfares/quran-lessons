@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'rest_framework', # Added for DRF
     'users', # Users like teachers
     'students', # Students
-    'quran', # Hifz, Surahs, Ayaat
+    'quran', # Hifz, Surahs, Ayaat,
+    'lessons',
     "drf_spectacular",
     "drf_spectacular_sidecar",
 ]
