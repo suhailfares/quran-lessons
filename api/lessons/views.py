@@ -2,6 +2,7 @@ from http import HTTPStatus
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+from rest_framework import generics
 from starlette.responses import Response
 
 from lessons.models import Lesson
@@ -11,20 +12,16 @@ from lessons.serializers import LessonSerializer, AttendanceSerializer
 
 # Create your views here.
 
-class LessonView(APIView):
+
+class LessonView(generics.ListCreateAPIView):
+    serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsTeacher]
 
-    def get(self, request):
-        lessons = Lesson.objects.filter(teacher=request.user)
-        serializer = LessonSerializer(lessons, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        return Lesson.objects.filter(teacher=self.request.user)
 
-    def post(self, request):
-        serializer = LessonSerializer(data = request.data)
-        if serializer.is_valid():
-            serializer.save(teacher=request.user)
-            return Response(serializer.data, status_code=HTTPStatus.CREATED)
-        return Response(serializer.errors, HTTPStatus.BAD_REQUEST)
+    def perform_create(self, serializer):
+        serializer.save(teacher=self.request.user)
 
 
 class AttendanceView(APIView):
