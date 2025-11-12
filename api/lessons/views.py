@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework import generics
@@ -13,6 +14,7 @@ from lessons.serializers import LessonSerializer, AttendanceSerializer
 # Create your views here.
 
 
+@extend_schema(tags=["Lessons"])
 class LessonView(generics.ListCreateAPIView):
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsTeacher]
@@ -23,7 +25,7 @@ class LessonView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(teacher=self.request.user)
 
-
+@extend_schema(tags=["Attendances"])
 class AttendanceView(APIView):
     permission_classes = [IsAuthenticated, IsTeacher]
 

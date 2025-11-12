@@ -8,6 +8,7 @@ from rest_framework import status
 from quran.serializers import StudentHifzCreateSerializer
 from quran.permissions import IsTeacher
 
+@extend_schema(tags=["Hifz"])
 class StudentHifzCreateView(APIView):
     permission_classes = [IsAuthenticated, IsTeacher]
 

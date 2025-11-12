@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from drf_spectacular.utils import extend_schema
 
 # Create your views here.
 
@@ -17,6 +18,7 @@ class IsTeacher(permissions.BasePermission):
         return request.user.is_authenticated and request.user.role == "teacher"
 """
 
+@extend_schema(tags=["Students"])
 class StudentViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
     serializer_class = StudentSerializer
