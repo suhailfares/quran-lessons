@@ -18,7 +18,6 @@ class AttendanceSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "student",
-            "lesson",
             "attended"
         ]
         read_only_fields = ["id"]
