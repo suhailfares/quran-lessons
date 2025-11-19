@@ -33,26 +33,33 @@ class LessonView(generics.ListCreateAPIView):
 class AttendanceView(APIView):
     permission_classes = [IsAuthenticated, IsTeacher]
 
-    def post(self, request):
-        user = request.user
+    def post(self, request, lesson_id):
         serializer = AttendanceSerializer(data = request.data)
 
         if serializer.is_valid():
-            lesson = serializer.validated_data["lesson"]
-            student = serializer.validated_data["user"]
+            student = serializer.validated_data["student"]
 
-            if lesson.teacher != user:
+            try:
+                lesson = Lesson.objects.get(id=lesson_id)
+            except Lesson.DoesNotExist:
+                return Response(
+                    {"detail": "Lesson not found"},
+                    status=HTTPStatus.NOT_FOUND
+                )
+
+            if lesson.teacher != request.user:
                 return Response(
                     {"detail": "You can only mark attendances for your own lessons"},
                     status=HTTPStatus.FORBIDDEN
                 )
 
-            if student.teacher != user:
+            if student.teacher != request.user:
                 return Response(
-                    {"detail": "You can only mark attendances for you own students"}
+                    {"detail": "You can only mark attendances for you own students"},
+                    status=HTTPStatus.FORBIDDEN
                 )
 
-            serializer.save()
+            serializer.save(lesson=lesson)
             return Response(serializer.data, status=HTTPStatus.CREATED)
 
         return Response(serializer.errors, status=HTTPStatus.BAD_REQUEST)
