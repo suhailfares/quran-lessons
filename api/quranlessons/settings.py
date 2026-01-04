@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'students', # Students
     'quran', # Hifz, Surahs, Ayaat,
     'lessons', # Lessons, Attendances
+    'habits',
     "drf_spectacular",
     "drf_spectacular_sidecar",
 ]
