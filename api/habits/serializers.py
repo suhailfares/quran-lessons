@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from habits.models import Habit
+from habits.models import Habit, StudentPoints
 
 
 class HabitSerializer(serializers.ModelSerializer):

@@ -5,7 +5,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from habits.models import Habit
 from habits.permissions import IsTeacher
-from habits.serializers import HabitSerializer
+from habits.serializers import HabitSerializer, StudentPointsSerializer
 
 
 # Create your views here.
