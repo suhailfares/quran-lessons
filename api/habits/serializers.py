@@ -8,3 +8,16 @@ class HabitSerializer(serializers.ModelSerializer):
         model = Habit
         fields = ["id", "name", "description", "points", "teacher"]
         read_only_fields = ["teacher"]
+
+class StudentPointsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentPoints
+        fields = [
+            "id",
+            "student",
+            "habit",
+            "teacher",
+            "points",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
