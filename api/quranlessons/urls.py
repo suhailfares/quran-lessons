@@ -15,6 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.contrib.auth.views import LogoutView
 from django.urls import path, include
 import rest_framework_simplejwt.views
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
@@ -34,5 +35,6 @@ urlpatterns = [
     path('api/', include('lessons.urls')),
     path("api/auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/login/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/", include("habits.urls")), 
 ]
 
