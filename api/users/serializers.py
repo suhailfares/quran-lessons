@@ -14,19 +14,20 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "last_name",
             "phone_number",
             "mosque_name",
-            "role",
             "password",  # input only
         ]
+        read_only_fields = []
 
     def create(self, validated_data):
         password = validated_data.pop("password")
-        user = User(**validated_data)
+        user = User(role="teacher", **validated_data)
         user.set_password(password)  # ✅ hash password
         user.save()
         return user
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
+        validated_data.pop("role", None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if password:
