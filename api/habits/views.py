@@ -48,10 +48,10 @@ class StudentPointsViewSet(
     def _validate_teacher_ownership(self, *, student, habit):
         user = self.request.user
 
-        if student.teacher_id != user.id:
+        if student.teacher_id != user.id: # type: ignore
             raise PermissionDenied("You can only award points to your own students.")
 
-        if habit.teacher_id != user.id:
+        if habit.teacher_id != user.id: # type: ignore
             raise PermissionDenied("You can only use habits you created.")
 
     def perform_create(self, serializer):
