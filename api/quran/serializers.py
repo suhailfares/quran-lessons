@@ -68,3 +68,13 @@ class StudentHifzCreateSerializer(serializers.Serializer):
             )
 
         return obj
+
+
+class StudentHifzSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    student_id = serializers.IntegerField()
+    chapter_index = serializers.IntegerField()
+    start = serializers.IntegerField()
+    end = serializers.IntegerField()
+    notes = serializers.CharField(allow_blank=True, allow_null=True)
+    created_at = serializers.DateTimeField()
