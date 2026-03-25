@@ -69,6 +69,8 @@ class StudentHifz(models.Model):
     notes = models.TextField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
+    ## TODO: CREATE CUSTOM DATE
+    ## TODO: CREATE MODE (Repetition, Memorization, Improvement)
 
     class Meta:
         db_table = "student_hifz"

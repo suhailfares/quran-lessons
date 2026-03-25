@@ -1,4 +1,14 @@
 {
-    "python-envs.defaultEnvManager": "ms-python.python:system",
-    "python-envs.pythonProjects": []
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.indexing": true,
+  "python.analysis.typeCheckingMode": "basic",
+  "python.defaultInterpreterPath": "${workspaceFolder}\\env\\Scripts\\python.exe",
+  "editor.formatOnSave": true,
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": false
+  },
+  "editor.suggestSelection": "first",
+  "editor.tabCompletion": "on"
 }

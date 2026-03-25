@@ -5,7 +5,6 @@ from django.contrib import admin
 from django.contrib import admin
 from .models import Lesson, Attendance
 
-
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
     list_display = ("id", "subject", "teacher")
@@ -19,3 +18,5 @@ class AttendanceAdmin(admin.ModelAdmin):
     ordering = ("lesson", "student")
     list_filter = ("lesson", "attended")
     search_fields = ("student__first_name", "student__last_name", "lesson__subject")
+
+    

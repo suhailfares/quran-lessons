@@ -1,9 +1,10 @@
-from django.shortcuts import render
 from drf_spectacular.utils import extend_schema
+from rest_framework import mixins
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
-from habits.models import Habit
+from habits.models import Habit, StudentPoints
 from habits.permissions import IsTeacher
 from habits.serializers import HabitSerializer, StudentPointsSerializer
 
@@ -13,7 +14,7 @@ from habits.serializers import HabitSerializer, StudentPointsSerializer
 @extend_schema(
     tags=["Habits"],
     summary="Manage Habits for current teacher",
-    description="habits"
+    description="Habits CRUD restricted to the authenticated teacher."
 )
 class HabitViewSet(ModelViewSet):
     serializer_class = HabitSerializer
@@ -26,38 +27,38 @@ class HabitViewSet(ModelViewSet):
         serializer.save(teacher=self.request.user)
 
 
-class StudentPointsViewSet(ModelViewSet):
+@extend_schema(
+    tags=["Student Points"],
+    summary="List and award habit points",
+    description="Teachers can view their own point logs and create new ones for their students."
+)
+class StudentPointsViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    GenericViewSet,
+):
     serializer_class = StudentPointsSerializer
     permission_classes = [IsAuthenticated, IsTeacher]
 
     def get_queryset(self):
-        """
-        Teachers can only see point records they created.
-        """
         return StudentPoints.objects.filter(
             teacher=self.request.user
         ).select_related("student", "habit")
 
+    def _validate_teacher_ownership(self, *, student, habit):
+        user = self.request.user
+
+        if student.teacher_id != user.id:
+            raise PermissionDenied("You can only award points to your own students.")
+
+        if habit.teacher_id != user.id:
+            raise PermissionDenied("You can only use habits you created.")
+
     def perform_create(self, serializer):
-        """
-        Automatically assign the logged-in teacher.
-        """
-        serializer.save(teacher=self.request.user)
-
-    def perform_update(self, serializer):
-        """
-        Prevent changing ownership.
-        """
-        if serializer.instance.teacher != self.request.user:
-            raise PermissionDenied("You cannot modify this record.")
-
-        serializer.save()
-
-    def perform_destroy(self, instance):
-        """
-        Prevent deleting others' records.
-        """
-        if instance.teacher != self.request.user:
-            raise PermissionDenied("You cannot delete this record.")
-
-        instance.delete()
+        student = serializer.validated_data["student"]
+        habit = serializer.validated_data["habit"]
+        self._validate_teacher_ownership(student=student, habit=habit)
+        serializer.save(
+            teacher=self.request.user,
+            points=habit.points,
+        )

@@ -9,5 +9,5 @@ from .models import User
 class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         (None, {"fields": ("phone_number", "mosque_name", "role")}),
-    )
+    ) # type: ignore
     list_display = ("username", "email", "first_name", "last_name", "role")
