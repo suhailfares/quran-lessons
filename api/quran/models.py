@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from students.models import Student
 
@@ -68,7 +69,7 @@ class StudentHifz(models.Model):
 
     notes = models.TextField(blank=True, null=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     ## TODO: CREATE CUSTOM DATE
     ## TODO: CREATE MODE (Repetition, Memorization, Improvement)
 
