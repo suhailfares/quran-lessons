@@ -57,8 +57,12 @@ class StudentPointsViewSet(
     def perform_create(self, serializer):
         student = serializer.validated_data["student"]
         habit = serializer.validated_data["habit"]
+        is_minus = serializer.validated_data.get("isMinus", False)
         self._validate_teacher_ownership(student=student, habit=habit)
+
+        points = -habit.minusPoints if is_minus else habit.points
+
         serializer.save(
             teacher=self.request.user,
-            points=habit.points,
+            points=points,
         )
