@@ -15,6 +15,7 @@ class Habit(models.Model):
         on_delete=models.CASCADE,
     )
     points = models.IntegerField(default=1)
+    minusPoints = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
@@ -36,8 +37,10 @@ class StudentPoints(models.Model):
         on_delete=models.CASCADE,
     )
 
+    isMinus = models.BooleanField(default=False)
+
     points = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return "self.student.name" + " self.habit.name"
+        return f"{self.student.name} - {self.habit.name}"
