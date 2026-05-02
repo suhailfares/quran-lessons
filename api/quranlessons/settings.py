@@ -36,7 +36,7 @@ INSTALLED_APPS = [
     'quran',  # Hifz, Surahs, Ayaat,
     'lessons',  # Lessons, Attendances
     'habits', # Habits, StudentPoints
-    'institutes' # Institutes
+    'institutes', # Institutes
     
     'django.contrib.admin',
     'django.contrib.auth',
