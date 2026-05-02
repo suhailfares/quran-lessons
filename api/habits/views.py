@@ -1,8 +1,10 @@
+from drf_spectacular.contrib.django_filters import DjangoFilterExtension
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from django_filters.rest_framework import DjangoFilterBackend
 
 from habits.models import Habit, StudentPoints
 from habits.permissions import IsTeacher
@@ -39,6 +41,14 @@ class StudentPointsViewSet(
 ):
     serializer_class = StudentPointsSerializer
     permission_classes = [IsAuthenticated, IsTeacher]
+
+    filter_backends = [DjangoFilterBackend]
+
+    filterset_fields = {
+        "student": ["exact"],
+        "habit": ["exact"],
+        "created_at": ["date",  "gte", "lte"]
+    }
 
     def get_queryset(self):
         return StudentPoints.objects.filter(
