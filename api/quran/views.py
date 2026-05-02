@@ -22,6 +22,7 @@ class StudentHifzCreateView(APIView):
             "end": obj.end_verse,
             "notes": obj.notes,
             "date": obj.created_at,
+            "mode": obj.mode,
         }
 
     @extend_schema(

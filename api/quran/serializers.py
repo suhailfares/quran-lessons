@@ -13,6 +13,12 @@ class StudentHifzCreateSerializer(serializers.Serializer):
     notes = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     date = serializers.DateTimeField()
 
+    mode = serializers.ChoiceField(
+        choices=StudentHifz.Mode.choices,
+        default=StudentHifz.Mode.MEMORIZATION,
+        required=True
+    )
+
     def validate(self, data):
         request = self.context["request"]
         user = request.user
@@ -55,6 +61,7 @@ class StudentHifzCreateSerializer(serializers.Serializer):
         chapter = validated_data["chapter_obj"]
         notes = validated_data.get("notes")
         created_at = validated_data["date"]
+        mode = validated_data["mode", StudentHifz.Mode.MEMORIZATION]
 
         try:
             obj = StudentHifz.objects.create(
@@ -64,6 +71,7 @@ class StudentHifzCreateSerializer(serializers.Serializer):
                 end_verse=validated_data["end"],
                 notes=notes,
                 created_at=created_at,
+                mode=mode
             )
         except IntegrityError:
             raise serializers.ValidationError(
@@ -81,3 +89,4 @@ class StudentHifzSerializer(serializers.Serializer):
     end = serializers.IntegerField()
     notes = serializers.CharField(allow_blank=True, allow_null=True)
     date = serializers.DateTimeField(source="created_at")
+    mode = serializers.ChoiceField(choices=StudentHifz.Mode.choices)
