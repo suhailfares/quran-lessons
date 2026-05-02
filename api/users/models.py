@@ -1,6 +1,8 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
+from institutes.models import Institute
+
 
 # Create your models here.
 
@@ -9,14 +11,22 @@ class User(AbstractUser):
 
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    # institute will later become its own model
-    institute = models.CharField(max_length=100, blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     mosque_name = models.CharField(max_length=150, blank=True, null=True)
+
+    institute = models.ForeignKey(
+        Institute,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='users',
+    )
 
     ROLE_CHOICES = (
         ('admin', 'Admin'),
         ('teacher', 'Teacher'),
+        ('institute_admin', 'Institute Admin'),
+        ('institute_user', 'Institute User'),
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
 
