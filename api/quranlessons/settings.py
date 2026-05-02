@@ -31,21 +31,24 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'users',  # Users like teachers
+    'students',  # Students
+    'quran',  # Hifz, Surahs, Ayaat,
+    'lessons',  # Lessons, Attendances
+    'habits', # Habits, StudentPoints
+    'institution' # Institution
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_filters',
+
     'rest_framework', # Added for DRF
-    'users', # Users like teachers
-    'students', # Students
-    'quran', # Hifz, Surahs, Ayaat,
-    'lessons', # Lessons, Attendances
-    'habits',
     "drf_spectacular",
     "drf_spectacular_sidecar",
-    'django_filters',
 ]
 
 MIDDLEWARE = [
