@@ -19,7 +19,7 @@ class StudentReadSerializer(serializers.ModelSerializer):
             "id", "first_name", "last_name", "father_name", "mother_name",
             "date_of_birth", "phone_number", "parent_phone_number",
             "birth_place", "school", "created_at",
-            "teacher_id"
+            "teacher_id", "updated_at", "is_deleted",
         ]
 
 
@@ -40,5 +40,7 @@ class StudentSerializer(serializers.ModelSerializer):
             "teacher",
             "teacher_id",
             "created_at",
+            "updated_at",
+            "is_deleted",
         ]
-        read_only_fields = ["id", "teacher", "teacher_id", "created_at"]
+        read_only_fields = ["id", "teacher", "teacher_id", "created_at", "updated_at", "is_deleted"]

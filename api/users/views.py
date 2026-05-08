@@ -2,6 +2,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.throttling import SimpleRateThrottle
+from rest_framework.views import APIView
 
 from users.models import User
 from users.serializers import UserCreateSerializer, UserReadSerializer
@@ -38,3 +39,15 @@ class UserCreateView(generics.CreateAPIView):
         read_serializer = UserReadSerializer(user, context={"request": request})
         headers = self.get_success_headers(read_serializer.data)
         return Response(read_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+@extend_schema(
+    tags=["Users"],
+    summary="Get the authenticated user's profile",
+    responses={200: UserReadSerializer},
+)
+class CurrentUserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response(UserReadSerializer(request.user).data, status=status.HTTP_200_OK)

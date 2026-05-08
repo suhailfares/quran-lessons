@@ -1,6 +1,8 @@
-from quran.views import StudentHifzCreateView
 from django.urls import path
 
+from quran.views import StudentHifzListCreateView, StudentHifzDetailView
+
 urlpatterns = [
-    path("hifz/", StudentHifzCreateView.as_view(), name="student-hifz-create"),
+    path("hifz/", StudentHifzListCreateView.as_view(), name="student-hifz"),
+    path("hifz/<int:pk>/", StudentHifzDetailView.as_view(), name="student-hifz-detail"),
 ]

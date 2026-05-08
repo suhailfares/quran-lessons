@@ -53,6 +53,11 @@ class Verse(models.Model):
         return f"{self.chapter.title} - {self.index}"
 
 class StudentHifz(models.Model):
+    class Label(models.TextChoices):
+        MEMORIZATION = "حفظ", "حفظ"
+        REVIEW = "مراجعة", "مراجعة"
+        CONSOLIDATION = "تثبيت", "تثبيت"
+
     id = models.AutoField(primary_key=True)
     student = models.ForeignKey(
         Student,
@@ -67,11 +72,17 @@ class StudentHifz(models.Model):
     start_verse = models.PositiveIntegerField(default=1)
     end_verse = models.PositiveIntegerField(default=1)
 
+    label = models.CharField(
+        max_length=16,
+        choices=Label.choices,
+        default=Label.MEMORIZATION,
+    )
+
     notes = models.TextField(blank=True, null=True)
 
     created_at = models.DateTimeField(default=timezone.now)
-    ## TODO: CREATE CUSTOM DATE
-    ## TODO: CREATE MODE (Repetition, Memorization, Improvement)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
 
     class Meta:
         db_table = "student_hifz"

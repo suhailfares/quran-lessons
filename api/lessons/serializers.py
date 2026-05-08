@@ -9,9 +9,11 @@ class LessonSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "subject",
-            "teacher"
+            "teacher",
+            "updated_at",
+            "is_deleted",
         ]
-        read_only_fields = ["id", "teacher"]
+        read_only_fields = ["id", "teacher", "updated_at", "is_deleted"]
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
@@ -20,9 +22,12 @@ class AttendanceSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "student",
-            "attended"
+            "attended",
+            "date",
+            "updated_at",
+            "is_deleted",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["id", "updated_at", "is_deleted"]
 
 
 class StudentEntrySerializer(serializers.Serializer):
@@ -31,6 +36,7 @@ class StudentEntrySerializer(serializers.Serializer):
 
 class BulkAttendancePayloadSerializer(serializers.Serializer):
     lesson_id = serializers.IntegerField(required=False)
+    date = serializers.DateField()
     students = StudentEntrySerializer(many=True)
 
     def validate(self, attrs):
@@ -49,11 +55,12 @@ class BulkAttendancePayloadSerializer(serializers.Serializer):
 
         attrs["lesson_id"] = payload_lesson_id or path_lesson_id
 
-        if not attrs["students"]:
-            raise serializers.ValidationError({"students": "Provide at least one entry."})
+        if attrs["students"] is None:
+            raise serializers.ValidationError({"students": "Provide a students array (may be empty)."})
         return attrs
 
 
 class AttendanceListResponseSerializer(serializers.Serializer):
     lesson_id = serializers.IntegerField()
+    date = serializers.DateField()
     students = StudentSerializer(many=True)

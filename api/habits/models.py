@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from students.models import Student
 from users.models import User
@@ -16,6 +17,9 @@ class Habit(models.Model):
     )
     points = models.IntegerField(default=1)
     minusPoints = models.IntegerField(default=0)
+
+    updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -37,10 +41,20 @@ class StudentPoints(models.Model):
         on_delete=models.CASCADE,
     )
 
+    lesson = models.ForeignKey(
+        "lessons.Lesson",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="student_points",
+    )
+
     isMinus = models.BooleanField(default=False)
 
     points = models.IntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.student.name} - {self.habit.name}"

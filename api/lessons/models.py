@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from students.models import Student
 from users.models import User
@@ -17,6 +18,9 @@ class Lesson(models.Model):
         related_name="lessons"
     )
 
+    updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.subject} by {self.teacher}"
 
@@ -34,9 +38,18 @@ class Attendance(models.Model):
         related_name="attendances"
     )
     attended = models.BooleanField(default=False)
+    date = models.DateField(default=timezone.now, db_index=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('student', 'lesson') # no same student in the same lesson
+        constraints = [
+            models.UniqueConstraint(
+                fields=["lesson", "student", "date"],
+                name="unique_attendance_lesson_student_date",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.student} - {self.lesson} - {'Present' if self.attended else 'Absent'}"

@@ -20,6 +20,8 @@ class User(AbstractUser):
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
 
+    token_version = models.PositiveIntegerField(default=0)
+
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["first_name", "last_name", "phone_number"]
 

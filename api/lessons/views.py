@@ -1,12 +1,14 @@
+from datetime import date as date_cls
 from http import HTTPStatus
 
 from django.db import transaction
+from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
-from rest_framework import generics
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from lessons.models import Lesson, Attendance
 from lessons.permissions import IsTeacher
@@ -16,27 +18,44 @@ from lessons.serializers import (
     BulkAttendancePayloadSerializer,
     AttendanceListResponseSerializer,
 )
+from quranlessons.sync import SoftDeleteDestroyMixin, apply_sync_filter
 from students.models import Student
 from students.serializers import StudentSerializer
 
 
-# Create your views here.
+SYNC_PARAM = OpenApiParameter(
+    name="updated_since",
+    type=OpenApiTypes.DATETIME,
+    location=OpenApiParameter.QUERY,
+    required=False,
+    description="ISO-8601 UTC. Returns only rows updated_at > updated_since (and includes tombstones).",
+)
 
 
 @extend_schema(
     tags=["Lessons"],
-    summary="List and create lessons",
-    description="GET returns lessons for the logged-in teacher. POST creates a lesson for that teacher."
+    parameters=[SYNC_PARAM],
 )
-class LessonView(generics.ListCreateAPIView):
+class LessonViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsTeacher]
+    queryset = Lesson.objects.all()
 
     def get_queryset(self):
-        return Lesson.objects.filter(teacher=self.request.user)
+        qs = Lesson.objects.filter(teacher=self.request.user)
+        return apply_sync_filter(qs, self.request)
 
     def perform_create(self, serializer):
         serializer.save(teacher=self.request.user)
+
+
+def _parse_date_param(raw):
+    if raw is None:
+        return None
+    try:
+        return date_cls.fromisoformat(raw)
+    except ValueError:
+        return ...
 
 
 @extend_schema(tags=["Attendances"])
@@ -48,21 +67,22 @@ class AttendanceView(APIView):
             lesson = Lesson.objects.get(id=lesson_id)
         except Lesson.DoesNotExist:
             return None, Response(
-                {"detail": "Lesson not found"},
-                status=HTTPStatus.NOT_FOUND,
+                {"detail": "Lesson not found"}, status=HTTPStatus.NOT_FOUND,
             )
-
         if lesson.teacher_id != user.id:
             return None, Response(
                 {"detail": "You can only mark attendances for your own lessons"},
                 status=HTTPStatus.FORBIDDEN,
             )
-
         return lesson, None
 
     @extend_schema(
-        summary="Bulk mark attendance",
-        description="Accepts lesson_id and array of students (each with studentId) and marks them attended=True.",
+        summary="Bulk mark attendance for a lesson on a date",
+        description=(
+            "Upserts attendance for each (lesson, student, date). Students in the payload "
+            "are set to attended=true; students for that lesson+date NOT in the payload "
+            "are set to attended=false (payload is the source of truth for the day)."
+        ),
         request=BulkAttendancePayloadSerializer,
         responses={
             201: AttendanceSerializer(many=True),
@@ -74,7 +94,7 @@ class AttendanceView(APIView):
     def post(self, request, lesson_id=None):
         if not isinstance(request.data, dict):
             return Response(
-                {"detail": "Expected an object with lesson_id and students."},
+                {"detail": "Expected an object with lesson_id, date, and students."},
                 status=HTTPStatus.BAD_REQUEST,
             )
 
@@ -84,6 +104,7 @@ class AttendanceView(APIView):
         )
         payload_serializer.is_valid(raise_exception=True)
         lesson_id = payload_serializer.validated_data["lesson_id"]
+        attendance_date = payload_serializer.validated_data["date"]
 
         lesson, error_response = self._get_lesson(lesson_id, request.user)
         if error_response:
@@ -97,7 +118,6 @@ class AttendanceView(APIView):
         students = Student.objects.filter(id__in=unique_ids, teacher=request.user)
         student_map = {student.id: student for student in students}
         missing_ids = sorted(unique_ids - set(student_map.keys()))
-
         if missing_ids:
             return Response(
                 {"detail": f"Students not found or not assigned to you: {missing_ids}"},
@@ -106,12 +126,19 @@ class AttendanceView(APIView):
 
         attendances = []
         with transaction.atomic():
-            for entry in payload_serializer.validated_data["students"]:
-                student = student_map[entry["studentId"]]
+            # mark not-listed students for the day as absent
+            Attendance.objects.filter(
+                lesson=lesson, date=attendance_date,
+            ).exclude(student_id__in=unique_ids).update(
+                attended=False, is_deleted=False, updated_at=timezone.now(),
+            )
+
+            for student in (student_map[sid] for sid in unique_ids):
                 attendance, _ = Attendance.objects.update_or_create(
                     student=student,
                     lesson=lesson,
-                    defaults={"attended": True},
+                    date=attendance_date,
+                    defaults={"attended": True, "is_deleted": False},
                 )
                 attendances.append(attendance)
 
@@ -119,16 +146,19 @@ class AttendanceView(APIView):
         return Response(response_data, status=HTTPStatus.CREATED)
 
     @extend_schema(
-        summary="List attendance roster",
-        description="Returns lesson_id and the list of students (per Student model) marked for this lesson.",
+        summary="List attendance roster for a lesson on a date",
         parameters=[
             OpenApiParameter(
-                name="lesson_id",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                required=False,
+                name="lesson_id", type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY, required=False,
                 description="Lesson identifier (omit when using /lessons/{lesson_id}/attendances).",
-            )
+            ),
+            OpenApiParameter(
+                name="date", type=OpenApiTypes.DATE,
+                location=OpenApiParameter.QUERY, required=False,
+                description="Day to query. Defaults to today (UTC).",
+            ),
+            SYNC_PARAM,
         ],
         responses={
             200: AttendanceListResponseSerializer,
@@ -152,19 +182,28 @@ class AttendanceView(APIView):
                     status=HTTPStatus.BAD_REQUEST,
                 )
 
+        date_raw = request.query_params.get("date")
+        parsed = _parse_date_param(date_raw)
+        if parsed is ...:
+            return Response(
+                {"detail": "date must be YYYY-MM-DD."},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+        attendance_date = parsed or timezone.now().date()
+
         lesson, error_response = self._get_lesson(lesson_id, request.user)
         if error_response:
             return error_response
 
         attendances = (
-            Attendance.objects.filter(lesson=lesson)
+            Attendance.objects.filter(lesson=lesson, date=attendance_date)
             .select_related("student")
             .order_by("student__first_name", "student__last_name")
         )
-        students = [attendance.student for attendance in attendances]
+        attendances = apply_sync_filter(attendances, request)
+        students = [a.student for a in attendances]
         students_data = StudentSerializer(students, many=True).data
-        response_payload = {
-            "lesson_id": lesson.id,
-            "students": students_data,
-        }
-        return Response(response_payload, status=HTTPStatus.OK)
+        return Response(
+            {"lesson_id": lesson.id, "date": attendance_date, "students": students_data},
+            status=HTTPStatus.OK,
+        )

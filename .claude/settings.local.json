@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned)",
+      "PowerShell(& .\\\\env\\\\Scripts\\\\python.exe manage.py makemigrations 2>&1)",
+      "PowerShell(& .\\\\env\\\\Scripts\\\\python.exe manage.py migrate 2>&1)",
+      "PowerShell(& .\\\\env\\\\Scripts\\\\python.exe manage.py check 2>&1)",
+      "PowerShell(& .\\\\env\\\\Scripts\\\\python.exe manage.py spectacular --file schema_check.yml 2>&1)"
+    ]
+  }
+}
