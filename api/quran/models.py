@@ -90,12 +90,5 @@ class StudentHifz(models.Model):
             models.Index(fields=["student", "chapter"]),
         ]
 
-        constraints = [
-            models.UniqueConstraint(
-                fields=["student", "chapter", "start_verse", "end_verse"],
-                name="Exact chapter and verses range per student"
-            )
-        ]
-
     def __str__(self):
         return f"{self.student} | {self.chapter.title} {self.start_verse}-{self.end_verse}"

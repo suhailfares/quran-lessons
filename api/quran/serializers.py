@@ -1,4 +1,3 @@
-from django.db import IntegrityError
 from rest_framework import serializers
 
 from quran.models import Chapter, StudentHifz
@@ -63,13 +62,7 @@ class StudentHifzCreateSerializer(serializers.Serializer):
         if "label" in validated_data:
             create_kwargs["label"] = validated_data["label"]
 
-        try:
-            obj = StudentHifz.objects.create(**create_kwargs)
-        except IntegrityError:
-            raise serializers.ValidationError(
-                "An identical range already exists for this student and chapter."
-            )
-
+        obj = StudentHifz.objects.create(**create_kwargs)
         return obj
 
 
@@ -107,12 +100,7 @@ class StudentHifzUpdateSerializer(serializers.Serializer):
                 "range": f"end exceeds chapter's total verses ({instance.chapter.totalVerses})."
             })
 
-        try:
-            instance.save()
-        except IntegrityError:
-            raise serializers.ValidationError(
-                "An identical range already exists for this student and chapter."
-            )
+        instance.save()
         return instance
 
 
