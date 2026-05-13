@@ -14,6 +14,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "last_name",
             "phone_number",
             "mosque_name",
+            "study",
+            "age",
             "password",  # input only
         ]
         read_only_fields = []
@@ -47,5 +49,7 @@ class UserReadSerializer(serializers.ModelSerializer):
             "last_name",
             "phone_number",
             "mosque_name",
+            "study",
+            "age",
             "role",
         ]

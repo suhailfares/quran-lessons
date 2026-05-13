@@ -20,6 +20,9 @@ class User(AbstractUser):
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
 
+    study = models.CharField(max_length=100, blank=True, null=True)
+    age = models.PositiveIntegerField(blank=True, null=True)
+
     token_version = models.PositiveIntegerField(default=0)
 
     USERNAME_FIELD = "username"
