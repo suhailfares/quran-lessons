@@ -22,6 +22,7 @@ class User(AbstractUser):
 
     study = models.CharField(max_length=100, blank=True, null=True)
     age = models.PositiveIntegerField(blank=True, null=True)
+    certificates = models.TextField(blank=True, null=True)
 
     token_version = models.PositiveIntegerField(default=0)
 

@@ -16,6 +16,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "mosque_name",
             "study",
             "age",
+            "certificates",
             "password",  # input only
         ]
         read_only_fields = []
@@ -51,5 +52,6 @@ class UserReadSerializer(serializers.ModelSerializer):
             "mosque_name",
             "study",
             "age",
+            "certificates",
             "role",
         ]
