@@ -15,7 +15,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "phone_number",
             "mosque_name",
             "study",
-            "age",
+            "date_of_birth",
             "certificates",
             "password",  # input only
         ]
@@ -51,7 +51,7 @@ class UserReadSerializer(serializers.ModelSerializer):
             "phone_number",
             "mosque_name",
             "study",
-            "age",
+            "date_of_birth",
             "certificates",
             "role",
         ]
