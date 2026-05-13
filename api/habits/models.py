@@ -52,6 +52,7 @@ class StudentPoints(models.Model):
     isMinus = models.BooleanField(default=False)
 
     points = models.IntegerField()
+    date = models.DateField(default=timezone.now)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     is_deleted = models.BooleanField(default=False)
