@@ -5,7 +5,7 @@ from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.views import APIView
 
 from users.models import User
-from users.serializers import UserCreateSerializer, UserReadSerializer
+from users.serializers import UserCreateSerializer, UserReadSerializer, UserUpdateSerializer
 
 
 class RegistrationRateThrottle(SimpleRateThrottle):
@@ -41,13 +41,35 @@ class UserCreateView(generics.CreateAPIView):
         return Response(read_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-@extend_schema(
-    tags=["Users"],
-    summary="Get the authenticated user's profile",
-    responses={200: UserReadSerializer},
-)
+@extend_schema(tags=["Users"])
 class CurrentUserView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        summary="Get the authenticated user's profile",
+        responses={200: UserReadSerializer},
+    )
     def get(self, request):
+        return Response(UserReadSerializer(request.user).data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="Update the authenticated user's profile",
+        request=UserUpdateSerializer,
+        responses={200: UserReadSerializer},
+    )
+    def patch(self, request):
+        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(UserReadSerializer(request.user).data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="Replace the authenticated user's profile fields",
+        request=UserUpdateSerializer,
+        responses={200: UserReadSerializer},
+    )
+    def put(self, request):
+        serializer = UserUpdateSerializer(request.user, data=request.data, partial=False)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(UserReadSerializer(request.user).data, status=status.HTTP_200_OK)
