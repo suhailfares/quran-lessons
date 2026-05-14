@@ -29,4 +29,4 @@ class StudentPointsSerializer(serializers.ModelSerializer):
             "updated_at",
             "is_deleted",
         ]
-        read_only_fields = ["id", "teacher", "points", "created_at", "updated_at", "is_deleted"]
+        read_only_fields = ["id", "teacher", "created_at", "updated_at", "is_deleted"]
