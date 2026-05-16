@@ -5,7 +5,12 @@ from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.views import APIView
 
 from users.models import User
-from users.serializers import UserCreateSerializer, UserReadSerializer, UserUpdateSerializer
+from users.serializers import (
+    PasswordChangeSerializer,
+    UserCreateSerializer,
+    UserReadSerializer,
+    UserUpdateSerializer,
+)
 
 
 class RegistrationRateThrottle(SimpleRateThrottle):
@@ -73,3 +78,25 @@ class CurrentUserView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(UserReadSerializer(request.user).data, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=["Users"],
+    summary="Change the authenticated user's password",
+    description="Requires the current password. All existing sessions are invalidated on success.",
+    request=PasswordChangeSerializer,
+    responses={204: None},
+)
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = PasswordChangeSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        user.set_password(serializer.validated_data["new_password"])
+        user.token_version = (user.token_version or 0) + 1
+        user.save(update_fields=["password", "token_version"])
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
