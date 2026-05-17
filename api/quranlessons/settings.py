@@ -61,7 +61,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    #'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -157,17 +157,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.User' # Custom user model
 
-#REST_FRAMEWORK = {
-#    "DEFAULT_AUTHENTICATION_CLASSES": (
-#        "users.authentication.VersionedJWTAuthentication",
-#    ),
-#    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-#}
-
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "users.authentication.VersionedJWTAuthentication",
+    ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
+
+#REST_FRAMEWORK = {
+#    "DEFAULT_AUTHENTICATION_CLASSES": [],
+#    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+#}
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Quran Institute API",
