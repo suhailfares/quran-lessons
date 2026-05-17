@@ -6,12 +6,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from quran.models import StudentHifz
+from quran.models import StudentHifz, QuranSabr
 from quran.permissions import IsTeacher
 from quran.serializers import (
     StudentHifzCreateSerializer,
     StudentHifzSerializer,
     StudentHifzUpdateSerializer,
+    QuranSabrCreateSerializer,
+    QuranSabrSerializer,
 )
 from quranlessons.sync import apply_sync_filter
 
@@ -108,3 +110,42 @@ class StudentHifzDetailView(APIView):
             obj.is_deleted = True
             obj.save(update_fields=["is_deleted", "updated_at"])
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+def _serialize_quran_sabr(obj: QuranSabr):
+    return QuranSabrSerializer(obj).data
+
+
+@extend_schema(tags=["Sabr"])
+class QuranSabrListCreateView(APIView):
+    permission_classes = [IsAuthenticated, IsTeacher]
+
+    @extend_schema(
+        responses={200: QuranSabrSerializer(many=True)},
+        description="List quran sabr entries for the authenticated teacher's students.",
+        summary="List quran sabr entries",
+        parameters=[SYNC_PARAM],
+    )
+    def get(self, request, *args, **kwargs):
+        queryset = (
+            QuranSabr.objects.filter(student__teacher=request.user)
+            .select_related("student")
+            .order_by("-created_at")
+        )
+        queryset = apply_sync_filter(queryset, request)
+        data = [_serialize_quran_sabr(obj) for obj in queryset]
+        return Response(data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        request=QuranSabrCreateSerializer,
+        responses={201: QuranSabrSerializer, 400: {"type": "object"}},
+        description="Create a new quran sabr entry",
+        summary="Create quran sabr entry",
+    )
+    def post(self, request, *args, **kwargs):
+        ser = QuranSabrCreateSerializer(data=request.data, context={"request": request})
+        ser.is_valid(raise_exception=True)
+        obj = ser.save()
+        return Response(_serialize_quran_sabr(obj), status=status.HTTP_201_CREATED)
+
+
