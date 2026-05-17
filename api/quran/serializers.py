@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from quran.models import Chapter, StudentHifz
+from quran.models import Chapter, StudentHifz, QuranSabr
 from students.models import Student
 
 
@@ -115,3 +115,61 @@ class StudentHifzSerializer(serializers.Serializer):
     date = serializers.DateTimeField(source="created_at")
     updated_at = serializers.DateTimeField(read_only=True)
     is_deleted = serializers.BooleanField(read_only=True)
+
+
+class QuranSabrCreateSerializer(serializers.Serializer):
+    student_id = serializers.IntegerField()
+    sabr_type = serializers.ChoiceField(choices=QuranSabr.Type.choices)
+    range = serializers.ListField(
+        child=serializers.IntegerField(min_value=1, max_value=30),
+        min_length=2,
+        max_length=2
+    )
+
+    def validate(self, data):
+        request = self.context["request"]
+        user = request.user
+
+        if getattr(user, "role", None) != "teacher":
+            raise serializers.ValidationError("Only teachers can create quran sabr records.")
+
+        try:
+            student = Student.objects.select_related("teacher").get(id=data["student_id"])
+        except Student.DoesNotExist:
+            raise serializers.ValidationError({"student_id": "Student not found."})
+
+        if student.teacher_id != user.id:
+            raise serializers.ValidationError("This student does not belong to the authenticated teacher.")
+
+        range_vals = data["range"]
+        if range_vals[0] > range_vals[1]:
+            raise serializers.ValidationError({"range": "First value must be <= second value."})
+
+        data["student_obj"] = student
+        data["range_start"] = range_vals[0]
+        data["range_end"] = range_vals[1]
+        return data
+
+    def create(self, validated_data):
+        obj = QuranSabr.objects.create(
+            student=validated_data["student_obj"],
+            sabr_type=validated_data["sabr_type"],
+            range_start=validated_data["range_start"],
+            range_end=validated_data["range_end"],
+        )
+        return obj
+
+
+class QuranSabrSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    student_id = serializers.IntegerField()
+    sabr_type = serializers.CharField()
+    range = serializers.SerializerMethodField()
+    created_at = serializers.DateTimeField()
+    updated_at = serializers.DateTimeField(read_only=True)
+    is_deleted = serializers.BooleanField(read_only=True)
+
+    def get_range(self, obj):
+        return [obj.range_start, obj.range_end]
+
+

@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'users', # Users like teachers
     'students', # Students
     'quran', # Hifz, Surahs, Ayaat,
+    'hadith', # Hadith Sabr
     'lessons', # Lessons, Attendances
     'habits',
     "drf_spectacular",

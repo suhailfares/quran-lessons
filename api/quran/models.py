@@ -92,3 +92,35 @@ class StudentHifz(models.Model):
 
     def __str__(self):
         return f"{self.student} | {self.chapter.title} {self.start_verse}-{self.end_verse}"
+
+
+class QuranSabr(models.Model):
+    class Type(models.TextChoices):
+        AWQAF = "سبر الأوقاف", "سبر الأوقاف"
+        INSTITUTE = "سبر المعهد", "سبر المعهد"
+        CUMULATIVE_INSTITUTE = "سبر المعهد التراكمي", "سبر المعهد التراكمي"
+
+    id = models.AutoField(primary_key=True)
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name="quran_sabr_entries"
+    )
+    sabr_type = models.CharField(
+        max_length=50,
+        choices=Type.choices,
+    )
+    range_start = models.PositiveIntegerField()
+    range_end = models.PositiveIntegerField()
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "quran_sabr"
+
+    def __str__(self):
+        return f"{self.student} | {self.sabr_type} ({self.range_start}-{self.range_end})"
+
+

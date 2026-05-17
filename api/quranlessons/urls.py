@@ -18,6 +18,7 @@ urlpatterns = [
     path('api/', include('users.urls')),
     path('api/', include('students.urls')),
     path('api/quran/', include('quran.urls')),
+    path('api/hadith/', include('hadith.urls')),
     path('api/', include('lessons.urls')),
     path("api/auth/login/", VersionedTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/login/refresh/", VersionedTokenRefreshView.as_view(), name="token_refresh"),
