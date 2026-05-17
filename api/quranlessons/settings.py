@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import dj_database_url
-from django.conf.global_settings import STATIC_ROOT
 from dotenv import load_dotenv
 import os
 from pathlib import Path
@@ -29,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG")
+DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = ["*"]
 
@@ -99,7 +98,9 @@ WSGI_APPLICATION = 'quranlessons.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.parse(
-        os.getenv("DATABASE_URL")
+        os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True,
     )
 }
 
