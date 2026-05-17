@@ -157,10 +157,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.User' # Custom user model
 
+#REST_FRAMEWORK = {
+#    "DEFAULT_AUTHENTICATION_CLASSES": (
+#        "users.authentication.VersionedJWTAuthentication",
+#    ),
+#    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+#}
+
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "users.authentication.VersionedJWTAuthentication",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
