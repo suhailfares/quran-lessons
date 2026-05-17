@@ -7,6 +7,11 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 
 from users.jwt import VersionedTokenObtainPairView, VersionedTokenRefreshView
 
+from django.http import JsonResponse
+
+def health(request):
+    return JsonResponse({"ok": True})
+
 urlpatterns = [
     # OpenAPI schema in JSON
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
@@ -23,4 +28,5 @@ urlpatterns = [
     path("api/auth/login/", VersionedTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/login/refresh/", VersionedTokenRefreshView.as_view(), name="token_refresh"),
     path("api/", include("habits.urls")),
+    path("health/", health),
 ]
