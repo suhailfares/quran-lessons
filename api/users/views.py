@@ -1,10 +1,11 @@
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.views import APIView
 
 from users.models import User
+from users.permissions import IsAdmin
 from users.serializers import (
     PasswordChangeSerializer,
     UserCreateSerializer,
@@ -78,6 +79,49 @@ class CurrentUserView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(UserReadSerializer(request.user).data, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=["Users"],
+    summary="List all users",
+    description="Returns all registered users. Admins only. Pass `mosque_name` to filter by mosque.",
+    parameters=[
+        OpenApiParameter(
+            name="mosque_name",
+            description="Filter users by mosque name (case-insensitive contains).",
+            required=False,
+            type=str,
+        )
+    ],
+    responses={200: UserReadSerializer(many=True)},
+)
+class UserListView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        qs = User.objects.all()
+        mosque_name = request.query_params.get("mosque_name")
+        if mosque_name:
+            qs = qs.filter(mosque_name__icontains=mosque_name)
+        return Response(UserReadSerializer(qs, many=True).data, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=["Users"],
+    summary="Delete a user by username",
+    description="Permanently deletes the user with the given username. Admins only.",
+    responses={204: None},
+)
+class UserDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+    def delete(self, request, username):
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(
