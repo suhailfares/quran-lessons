@@ -55,6 +55,15 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class AdminCreateSerializer(UserCreateSerializer):
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        user = User(role="admin", **validated_data)
+        user.set_password(password)
+        user.save()
+        return user
+
+
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

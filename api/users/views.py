@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from users.models import User
 from users.permissions import IsAdmin
 from users.serializers import (
+    AdminCreateSerializer,
     PasswordChangeSerializer,
     UserCreateSerializer,
     UserReadSerializer,
@@ -122,6 +123,23 @@ class UserDeleteView(APIView):
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(
+    tags=["Users"],
+    summary="Create an admin account",
+    description="Creates a new user with role=admin. Admins only.",
+    request=AdminCreateSerializer,
+    responses={201: UserReadSerializer},
+)
+class AdminCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+    def post(self, request):
+        serializer = AdminCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(UserReadSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(
