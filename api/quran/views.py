@@ -15,6 +15,7 @@ from quran.serializers import (
     QuranSabrCreateSerializer,
     QuranSabrSerializer,
 )
+from quranlessons.roles import is_admin
 from quranlessons.sync import apply_sync_filter
 
 
@@ -42,8 +43,9 @@ class StudentHifzListCreateView(APIView):
         parameters=[SYNC_PARAM],
     )
     def get(self, request, *args, **kwargs):
+        queryset = StudentHifz.objects.all() if is_admin(request.user) else StudentHifz.objects.filter(student__teacher=request.user)
         queryset = (
-            StudentHifz.objects.filter(student__teacher=request.user)
+            queryset
             .select_related("chapter", "student")
             .order_by("-created_at")
         )
@@ -74,7 +76,7 @@ class StudentHifzDetailView(APIView):
             obj = StudentHifz.objects.select_related("chapter", "student").get(pk=pk)
         except StudentHifz.DoesNotExist:
             return None, Response({"detail": "Hifz entry not found."}, status=status.HTTP_404_NOT_FOUND)
-        if obj.student.teacher_id != request.user.id:
+        if not is_admin(request.user) and obj.student.teacher_id != request.user.id:
             return None, Response({"detail": "Not yours."}, status=status.HTTP_403_FORBIDDEN)
         return obj, None
 
@@ -127,8 +129,9 @@ class QuranSabrListCreateView(APIView):
         parameters=[SYNC_PARAM],
     )
     def get(self, request, *args, **kwargs):
+        queryset = QuranSabr.objects.all() if is_admin(request.user) else QuranSabr.objects.filter(student__teacher=request.user)
         queryset = (
-            QuranSabr.objects.filter(student__teacher=request.user)
+            queryset
             .select_related("student")
             .order_by("-created_at")
         )

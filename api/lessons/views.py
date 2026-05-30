@@ -4,7 +4,7 @@ from http import HTTPStatus
 from django.db import transaction
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -18,6 +18,7 @@ from lessons.serializers import (
     BulkAttendancePayloadSerializer,
     AttendanceListResponseSerializer,
 )
+from quranlessons.roles import is_admin, resolve_create_teacher
 from quranlessons.sync import SoftDeleteDestroyMixin, apply_sync_filter
 from students.models import Student
 from students.serializers import StudentSerializer
@@ -36,17 +37,26 @@ SYNC_PARAM = OpenApiParameter(
     tags=["Lessons"],
     parameters=[SYNC_PARAM],
 )
+@extend_schema_view(
+    create=extend_schema(
+        description=(
+            "Admins may include `teacher` (a teacher's user id) in the body to assign the "
+            "new record to that teacher; non-admins always own what they create."
+        ),
+    ),
+)
 class LessonViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsTeacher]
     queryset = Lesson.objects.all()
 
     def get_queryset(self):
-        qs = Lesson.objects.filter(teacher=self.request.user)
+        user = self.request.user
+        qs = Lesson.objects.all() if is_admin(user) else Lesson.objects.filter(teacher=user)
         return apply_sync_filter(qs, self.request)
 
     def perform_create(self, serializer):
-        serializer.save(teacher=self.request.user)
+        serializer.save(teacher=resolve_create_teacher(self.request, serializer))
 
 
 def _parse_date_param(raw):
@@ -69,7 +79,7 @@ class AttendanceView(APIView):
             return None, Response(
                 {"detail": "Lesson not found"}, status=HTTPStatus.NOT_FOUND,
             )
-        if lesson.teacher_id != user.id:
+        if not is_admin(user) and lesson.teacher_id != user.id:
             return None, Response(
                 {"detail": "You can only mark attendances for your own lessons"},
                 status=HTTPStatus.FORBIDDEN,
@@ -115,7 +125,9 @@ class AttendanceView(APIView):
         ]
         unique_ids = set(student_ids)
 
-        students = Student.objects.filter(id__in=unique_ids, teacher=request.user)
+        students = Student.objects.filter(id__in=unique_ids)
+        if not is_admin(request.user):
+            students = students.filter(teacher=request.user)
         student_map = {student.id: student for student in students}
         missing_ids = sorted(unique_ids - set(student_map.keys()))
         if missing_ids:

@@ -14,6 +14,7 @@ from hadith.serializers import (
     HadithHifzUpdateSerializer,
     HadithHifzSerializer,
 )
+from quranlessons.roles import is_admin
 from quranlessons.sync import apply_sync_filter
 
 
@@ -45,8 +46,9 @@ class HadithSabrListCreateView(APIView):
         parameters=[SYNC_PARAM],
     )
     def get(self, request, *args, **kwargs):
+        queryset = HadithSabr.objects.all() if is_admin(request.user) else HadithSabr.objects.filter(student__teacher=request.user)
         queryset = (
-            HadithSabr.objects.filter(student__teacher=request.user)
+            queryset
             .select_related("student")
             .order_by("-created_at")
         )
@@ -78,8 +80,9 @@ class HadithHifzListCreateView(APIView):
         parameters=[SYNC_PARAM],
     )
     def get(self, request, *args, **kwargs):
+        queryset = HadithHifz.objects.all() if is_admin(request.user) else HadithHifz.objects.filter(student__teacher=request.user)
         queryset = (
-            HadithHifz.objects.filter(student__teacher=request.user)
+            queryset
             .select_related("student")
             .order_by("-created_at")
         )
@@ -110,7 +113,7 @@ class HadithHifzDetailView(APIView):
             obj = HadithHifz.objects.select_related("student").get(pk=pk)
         except HadithHifz.DoesNotExist:
             return None, Response({"detail": "Hadith hifz entry not found."}, status=status.HTTP_404_NOT_FOUND)
-        if obj.student.teacher_id != request.user.id:
+        if not is_admin(request.user) and obj.student.teacher_id != request.user.id:
             return None, Response({"detail": "Not yours."}, status=status.HTTP_403_FORBIDDEN)
         return obj, None
 

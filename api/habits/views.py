@@ -1,5 +1,5 @@
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import mixins
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -11,6 +11,7 @@ from habits.serializers import (
     HabitSerializer,
     StudentPointsSerializer,
 )
+from quranlessons.roles import is_admin, resolve_create_teacher
 from quranlessons.sync import SoftDeleteDestroyMixin, apply_sync_filter
 
 
@@ -29,22 +30,39 @@ SYNC_PARAM = OpenApiParameter(
     description="Habits CRUD restricted to the authenticated teacher.",
     parameters=[SYNC_PARAM],
 )
+@extend_schema_view(
+    create=extend_schema(
+        description=(
+            "Admins may include `teacher` (a teacher's user id) in the body to assign the "
+            "new record to that teacher; non-admins always own what they create."
+        ),
+    ),
+)
 class HabitViewSet(SoftDeleteDestroyMixin, ModelViewSet):
     serializer_class = HabitSerializer
     permission_classes = [IsAuthenticated, IsTeacher]
     queryset = Habit.objects.all()
 
     def get_queryset(self):
-        qs = Habit.objects.filter(teacher=self.request.user)
+        user = self.request.user
+        qs = Habit.objects.all() if is_admin(user) else Habit.objects.filter(teacher=user)
         return apply_sync_filter(qs, self.request)
 
     def perform_create(self, serializer):
-        serializer.save(teacher=self.request.user)
+        serializer.save(teacher=resolve_create_teacher(self.request, serializer))
 
 
 @extend_schema(
     tags=["Student Points"],
     parameters=[SYNC_PARAM],
+)
+@extend_schema_view(
+    create=extend_schema(
+        description=(
+            "Admins may include `teacher` (a teacher's user id) in the body to assign the "
+            "new record to that teacher; non-admins always own what they create."
+        ),
+    ),
 )
 class StudentPointsViewSet(
     SoftDeleteDestroyMixin,
@@ -58,13 +76,15 @@ class StudentPointsViewSet(
     queryset = StudentPoints.objects.all()
 
     def get_queryset(self):
-        qs = StudentPoints.objects.filter(teacher=self.request.user).select_related(
-            "student", "habit", "lesson"
-        )
+        user = self.request.user
+        qs = StudentPoints.objects.all() if is_admin(user) else StudentPoints.objects.filter(teacher=user)
+        qs = qs.select_related("student", "habit", "lesson")
         return apply_sync_filter(qs, self.request)
 
     def _validate_teacher_ownership(self, *, student, habit):
         user = self.request.user
+        if is_admin(user):
+            return
         if student.teacher_id != user.id:  # type: ignore
             raise PermissionDenied("You can only award points to your own students.")
         if habit.teacher_id != user.id:  # type: ignore
@@ -75,4 +95,4 @@ class StudentPointsViewSet(
         habit = serializer.validated_data["habit"]
         self._validate_teacher_ownership(student=student, habit=habit)
 
-        serializer.save(teacher=self.request.user)
+        serializer.save(teacher=resolve_create_teacher(self.request, serializer))

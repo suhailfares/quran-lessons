@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from quranlessons.serializers import TeacherAssignableSerializerMixin
 from .models import Student
 
 
@@ -23,7 +25,7 @@ class StudentReadSerializer(serializers.ModelSerializer):
         ]
 
 
-class StudentSerializer(serializers.ModelSerializer):
+class StudentSerializer(TeacherAssignableSerializerMixin):
     class Meta:
         model = Student
         fields = [
@@ -43,4 +45,4 @@ class StudentSerializer(serializers.ModelSerializer):
             "updated_at",
             "is_deleted",
         ]
-        read_only_fields = ["id", "teacher", "teacher_id", "created_at", "updated_at", "is_deleted"]
+        read_only_fields = ["id", "teacher_id", "created_at", "updated_at", "is_deleted"]

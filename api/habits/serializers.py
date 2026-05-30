@@ -1,19 +1,20 @@
 from rest_framework import serializers
 
 from habits.models import Habit, StudentPoints
+from quranlessons.serializers import TeacherAssignableSerializerMixin
 
 
-class HabitSerializer(serializers.ModelSerializer):
+class HabitSerializer(TeacherAssignableSerializerMixin):
     class Meta:
         model = Habit
         fields = [
             "id", "name", "description", "points", "minusPoints", "teacher",
             "updated_at", "is_deleted",
         ]
-        read_only_fields = ["teacher", "updated_at", "is_deleted"]
+        read_only_fields = ["updated_at", "is_deleted"]
 
 
-class StudentPointsSerializer(serializers.ModelSerializer):
+class StudentPointsSerializer(TeacherAssignableSerializerMixin):
     class Meta:
         model = StudentPoints
         fields = [
@@ -29,4 +30,4 @@ class StudentPointsSerializer(serializers.ModelSerializer):
             "updated_at",
             "is_deleted",
         ]
-        read_only_fields = ["id", "teacher", "created_at", "updated_at", "is_deleted"]
+        read_only_fields = ["id", "created_at", "updated_at", "is_deleted"]

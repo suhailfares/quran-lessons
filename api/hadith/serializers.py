@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from hadith.models import HadithSabr, HadithHifz
+from quranlessons.roles import is_admin
 from students.models import Student
 
 
@@ -12,7 +13,7 @@ class HadithSabrCreateSerializer(serializers.Serializer):
         request = self.context["request"]
         user = request.user
 
-        if getattr(user, "role", None) != "teacher":
+        if getattr(user, "role", None) not in ("teacher", "admin"):
             raise serializers.ValidationError("Only teachers can create hadith sabr records.")
 
         try:
@@ -20,7 +21,7 @@ class HadithSabrCreateSerializer(serializers.Serializer):
         except Student.DoesNotExist:
             raise serializers.ValidationError({"student_id": "Student not found."})
 
-        if student.teacher_id != user.id:
+        if not is_admin(user) and student.teacher_id != user.id:
             raise serializers.ValidationError("This student does not belong to the authenticated teacher.")
 
         data["student_obj"] = student
@@ -54,7 +55,7 @@ class HadithHifzCreateSerializer(serializers.Serializer):
         request = self.context["request"]
         user = request.user
 
-        if getattr(user, "role", None) != "teacher":
+        if getattr(user, "role", None) not in ("teacher", "admin"):
             raise serializers.ValidationError("Only teachers can create hadith hifz records.")
 
         try:
@@ -62,7 +63,7 @@ class HadithHifzCreateSerializer(serializers.Serializer):
         except Student.DoesNotExist:
             raise serializers.ValidationError({"student_id": "Student not found."})
 
-        if student.teacher_id != user.id:
+        if not is_admin(user) and student.teacher_id != user.id:
             raise serializers.ValidationError("This student does not belong to the authenticated teacher.")
 
         if not data["hadith_numbers"]:

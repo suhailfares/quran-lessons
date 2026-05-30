@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from lessons.models import Lesson, Attendance
+from quranlessons.serializers import TeacherAssignableSerializerMixin
 from students.serializers import StudentSerializer
 
 
-class LessonSerializer(serializers.ModelSerializer):
+class LessonSerializer(TeacherAssignableSerializerMixin):
     class Meta:
         model = Lesson
         fields = [
@@ -13,7 +14,7 @@ class LessonSerializer(serializers.ModelSerializer):
             "updated_at",
             "is_deleted",
         ]
-        read_only_fields = ["id", "teacher", "updated_at", "is_deleted"]
+        read_only_fields = ["id", "updated_at", "is_deleted"]
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
