@@ -4,7 +4,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema
 from rest_framework import viewsets, permissions
 from rest_framework.exceptions import PermissionDenied
 
-from quranlessons.roles import is_admin, resolve_create_teacher
+from quranlessons.roles import is_admin, is_strict_admin, is_manager, resolve_create_teacher
 from quranlessons.sync import SoftDeleteDestroyMixin, apply_sync_filter
 
 from .models import Student
@@ -39,7 +39,12 @@ class StudentViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Student.objects.all() if is_admin(user) else Student.objects.filter(teacher=user)
+        if is_strict_admin(user):
+            qs = Student.objects.all()
+        elif is_manager(user):
+            qs = Student.objects.filter(teacher__mosque_name=user.mosque_name)
+        else:
+            qs = Student.objects.filter(teacher=user)
         return apply_sync_filter(qs, self.request)
 
     def perform_create(self, serializer):

@@ -14,7 +14,7 @@ from hadith.serializers import (
     HadithHifzUpdateSerializer,
     HadithHifzSerializer,
 )
-from quranlessons.roles import is_admin
+from quranlessons.roles import is_admin, is_strict_admin, is_manager
 from quranlessons.sync import apply_sync_filter
 
 
@@ -46,7 +46,13 @@ class HadithSabrListCreateView(APIView):
         parameters=[SYNC_PARAM],
     )
     def get(self, request, *args, **kwargs):
-        queryset = HadithSabr.objects.all() if is_admin(request.user) else HadithSabr.objects.filter(student__teacher=request.user)
+        user = request.user
+        if is_strict_admin(user):
+            queryset = HadithSabr.objects.all()
+        elif is_manager(user):
+            queryset = HadithSabr.objects.filter(student__teacher__mosque_name=user.mosque_name)
+        else:
+            queryset = HadithSabr.objects.filter(student__teacher=user)
         queryset = (
             queryset
             .select_related("student")
@@ -80,7 +86,13 @@ class HadithHifzListCreateView(APIView):
         parameters=[SYNC_PARAM],
     )
     def get(self, request, *args, **kwargs):
-        queryset = HadithHifz.objects.all() if is_admin(request.user) else HadithHifz.objects.filter(student__teacher=request.user)
+        user = request.user
+        if is_strict_admin(user):
+            queryset = HadithHifz.objects.all()
+        elif is_manager(user):
+            queryset = HadithHifz.objects.filter(student__teacher__mosque_name=user.mosque_name)
+        else:
+            queryset = HadithHifz.objects.filter(student__teacher=user)
         queryset = (
             queryset
             .select_related("student")
@@ -110,10 +122,16 @@ class HadithHifzDetailView(APIView):
 
     def _get_object(self, request, pk):
         try:
-            obj = HadithHifz.objects.select_related("student").get(pk=pk)
+            obj = HadithHifz.objects.select_related("student__teacher").get(pk=pk)
         except HadithHifz.DoesNotExist:
             return None, Response({"detail": "Hadith hifz entry not found."}, status=status.HTTP_404_NOT_FOUND)
-        if not is_admin(request.user) and obj.student.teacher_id != request.user.id:
+        user = request.user
+        if is_strict_admin(user):
+            pass
+        elif is_manager(user):
+            if obj.student.teacher.mosque_name != user.mosque_name:
+                return None, Response({"detail": "Not yours."}, status=status.HTTP_403_FORBIDDEN)
+        elif obj.student.teacher_id != user.id:
             return None, Response({"detail": "Not yours."}, status=status.HTTP_403_FORBIDDEN)
         return obj, None
 

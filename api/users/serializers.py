@@ -64,6 +64,15 @@ class AdminCreateSerializer(UserCreateSerializer):
         return user
 
 
+class ManagerCreateSerializer(UserCreateSerializer):
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        user = User(role="manager", **validated_data)
+        user.set_password(password)
+        user.save()
+        return user
+
+
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

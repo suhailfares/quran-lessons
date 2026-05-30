@@ -11,7 +11,7 @@ from habits.serializers import (
     HabitSerializer,
     StudentPointsSerializer,
 )
-from quranlessons.roles import is_admin, resolve_create_teacher
+from quranlessons.roles import is_admin, is_strict_admin, is_manager, resolve_create_teacher
 from quranlessons.sync import SoftDeleteDestroyMixin, apply_sync_filter
 
 
@@ -45,7 +45,12 @@ class HabitViewSet(SoftDeleteDestroyMixin, ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Habit.objects.all() if is_admin(user) else Habit.objects.filter(teacher=user)
+        if is_strict_admin(user):
+            qs = Habit.objects.all()
+        elif is_manager(user):
+            qs = Habit.objects.filter(teacher__mosque_name=user.mosque_name)
+        else:
+            qs = Habit.objects.filter(teacher=user)
         return apply_sync_filter(qs, self.request)
 
     def perform_create(self, serializer):
@@ -77,13 +82,24 @@ class StudentPointsViewSet(
 
     def get_queryset(self):
         user = self.request.user
-        qs = StudentPoints.objects.all() if is_admin(user) else StudentPoints.objects.filter(teacher=user)
+        if is_strict_admin(user):
+            qs = StudentPoints.objects.all()
+        elif is_manager(user):
+            qs = StudentPoints.objects.filter(teacher__mosque_name=user.mosque_name)
+        else:
+            qs = StudentPoints.objects.filter(teacher=user)
         qs = qs.select_related("student", "habit", "lesson")
         return apply_sync_filter(qs, self.request)
 
     def _validate_teacher_ownership(self, *, student, habit):
         user = self.request.user
-        if is_admin(user):
+        if is_strict_admin(user):
+            return
+        if is_manager(user):
+            if student.teacher.mosque_name != user.mosque_name:
+                raise PermissionDenied("You can only award points to students in your mosque.")
+            if habit.teacher.mosque_name != user.mosque_name:
+                raise PermissionDenied("You can only use habits from your mosque.")
             return
         if student.teacher_id != user.id:  # type: ignore
             raise PermissionDenied("You can only award points to your own students.")

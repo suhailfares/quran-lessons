@@ -1,8 +1,20 @@
 """Shared role helpers."""
 
+# Roles that get elevated access across the API.
+ADMIN_ROLES = ("admin", "manager")
+
 
 def is_admin(user):
-    """True if the user is authenticated and has the admin role."""
+    """True for admin or manager — use for permission gates."""
+    return bool(
+        user
+        and user.is_authenticated
+        and getattr(user, "role", None) in ADMIN_ROLES
+    )
+
+
+def is_strict_admin(user):
+    """True only for role == 'admin' (not manager)."""
     return bool(
         user
         and user.is_authenticated
@@ -10,13 +22,27 @@ def is_admin(user):
     )
 
 
-def resolve_create_teacher(request, serializer):
-    """Pick the owner (`teacher`) to stamp on a newly created row.
+def is_manager(user):
+    """True only for role == 'manager'."""
+    return bool(
+        user
+        and user.is_authenticated
+        and getattr(user, "role", None) == "manager"
+    )
 
-    Admins may supply a validated ``teacher`` to assign the row to that teacher
-    (see ``TeacherAssignableSerializerMixin``). Non-admins, and admins who omit
-    it, own the row themselves. The mixin already drops ``teacher`` for
-    non-admins, so reading ``validated_data`` here is safe.
+
+def same_mosque(user, mosque_name):
+    """True if user's mosque_name matches the given value (both non-empty)."""
+    user_mosque = getattr(user, "mosque_name", None)
+    return bool(user_mosque and mosque_name and user_mosque == mosque_name)
+
+
+def resolve_create_teacher(request, serializer):
+    """Pick the owner for a new row.
+
+    Admins and managers may supply a validated ``teacher`` via the request body
+    (see ``TeacherAssignableSerializerMixin``). The mixin already validates that
+    managers only assign teachers in their own mosque.
     """
     user = request.user
     if is_admin(user):

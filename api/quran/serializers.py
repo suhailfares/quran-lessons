@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from quran.models import Chapter, StudentHifz, QuranSabr
-from quranlessons.roles import is_admin
+from quranlessons.roles import is_strict_admin, is_manager
 from students.models import Student
 
 
@@ -18,7 +18,7 @@ class StudentHifzCreateSerializer(serializers.Serializer):
         request = self.context["request"]
         user = request.user
 
-        if getattr(user, "role", None) not in ("teacher", "admin"):
+        if not (getattr(user, "role", None) == "teacher" or is_strict_admin(user) or is_manager(user)):
             raise serializers.ValidationError("Only teachers can create hifz records.")
 
         try:
@@ -26,7 +26,12 @@ class StudentHifzCreateSerializer(serializers.Serializer):
         except Student.DoesNotExist:
             raise serializers.ValidationError({"student_id": "Student not found."})
 
-        if not is_admin(user) and student.teacher_id != user.id:
+        if is_strict_admin(user):
+            pass
+        elif is_manager(user):
+            if student.teacher.mosque_name != user.mosque_name:
+                raise serializers.ValidationError("This student does not belong to your mosque.")
+        elif student.teacher_id != user.id:
             raise serializers.ValidationError("This student does not belong to the authenticated teacher.")
 
         try:
@@ -131,7 +136,7 @@ class QuranSabrCreateSerializer(serializers.Serializer):
         request = self.context["request"]
         user = request.user
 
-        if getattr(user, "role", None) not in ("teacher", "admin"):
+        if not (getattr(user, "role", None) == "teacher" or is_strict_admin(user) or is_manager(user)):
             raise serializers.ValidationError("Only teachers can create quran sabr records.")
 
         try:
@@ -139,7 +144,12 @@ class QuranSabrCreateSerializer(serializers.Serializer):
         except Student.DoesNotExist:
             raise serializers.ValidationError({"student_id": "Student not found."})
 
-        if not is_admin(user) and student.teacher_id != user.id:
+        if is_strict_admin(user):
+            pass
+        elif is_manager(user):
+            if student.teacher.mosque_name != user.mosque_name:
+                raise serializers.ValidationError("This student does not belong to your mosque.")
+        elif student.teacher_id != user.id:
             raise serializers.ValidationError("This student does not belong to the authenticated teacher.")
 
         range_vals = data["range"]

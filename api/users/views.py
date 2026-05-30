@@ -4,9 +4,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from users.models import User
-from users.permissions import IsAdmin
+from quranlessons.roles import is_strict_admin, is_manager
+from users.permissions import IsAdmin, IsStrictAdmin
 from users.serializers import (
     AdminCreateSerializer,
+    ManagerCreateSerializer,
     PasswordChangeSerializer,
     UserCreateSerializer,
     UserReadSerializer,
@@ -85,10 +87,16 @@ class UserListView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
     def get(self, request):
-        qs = User.objects.all()
-        mosque_name = request.query_params.get("mosque_name")
-        if mosque_name:
-            qs = qs.filter(mosque_name__icontains=mosque_name)
+        user = request.user
+        if is_strict_admin(user):
+            qs = User.objects.all()
+            mosque_name = request.query_params.get("mosque_name")
+            if mosque_name:
+                qs = qs.filter(mosque_name__icontains=mosque_name)
+        elif is_manager(user):
+            qs = User.objects.filter(mosque_name=user.mosque_name, role="teacher")
+        else:
+            qs = User.objects.none()
         return Response(UserReadSerializer(qs, many=True).data, status=status.HTTP_200_OK)
 
 
@@ -106,6 +114,12 @@ class UserDeleteView(APIView):
             user = User.objects.get(username=username)
         except User.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        requester = request.user
+        if getattr(user, "role", None) == "admin" and not is_strict_admin(requester):
+            return Response({"detail": "Only admins can delete admin accounts."}, status=status.HTTP_403_FORBIDDEN)
+        if is_manager(requester):
+            if getattr(user, "mosque_name", None) != requester.mosque_name:
+                return Response({"detail": "You can only delete users in your mosque."}, status=status.HTTP_403_FORBIDDEN)
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -113,15 +127,32 @@ class UserDeleteView(APIView):
 @extend_schema(
     tags=["Users"],
     summary="Create an admin account",
-    description="Creates a new user with role=admin. Admins only.",
+    description="Creates a new user with role=admin. Strict admins only (managers cannot create admins).",
     request=AdminCreateSerializer,
     responses={201: UserReadSerializer},
 )
 class AdminCreateView(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsStrictAdmin]
 
     def post(self, request):
         serializer = AdminCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(UserReadSerializer(user).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(
+    tags=["Users"],
+    summary="Create a manager account",
+    description="Creates a new user with role=manager. Admins only.",
+    request=ManagerCreateSerializer,
+    responses={201: UserReadSerializer},
+)
+class ManagerCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+    def post(self, request):
+        serializer = ManagerCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(UserReadSerializer(user).data, status=status.HTTP_201_CREATED)

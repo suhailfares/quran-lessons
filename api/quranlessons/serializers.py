@@ -1,7 +1,7 @@
 """Shared serializer building blocks."""
 from rest_framework import serializers
 
-from quranlessons.roles import is_admin
+from quranlessons.roles import is_strict_admin, is_manager, same_mosque
 from users.models import User
 
 
@@ -24,6 +24,17 @@ class TeacherAssignableSerializerMixin(serializers.ModelSerializer):
     def validate(self, attrs):
         attrs = super().validate(attrs)
         request = self.context.get("request")
-        if "teacher" in attrs and not is_admin(getattr(request, "user", None)):
-            attrs.pop("teacher")
+        user = getattr(request, "user", None)
+        if "teacher" not in attrs:
+            return attrs
+        if is_strict_admin(user):
+            pass  # unrestricted
+        elif is_manager(user):
+            teacher = attrs["teacher"]
+            if not same_mosque(user, getattr(teacher, "mosque_name", None)):
+                raise serializers.ValidationError(
+                    {"teacher": "You can only assign to teachers in your mosque."}
+                )
+        else:
+            attrs.pop("teacher")  # non-elevated users cannot assign ownership
         return attrs

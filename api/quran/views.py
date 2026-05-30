@@ -15,7 +15,7 @@ from quran.serializers import (
     QuranSabrCreateSerializer,
     QuranSabrSerializer,
 )
-from quranlessons.roles import is_admin
+from quranlessons.roles import is_admin, is_strict_admin, is_manager
 from quranlessons.sync import apply_sync_filter
 
 
@@ -43,7 +43,13 @@ class StudentHifzListCreateView(APIView):
         parameters=[SYNC_PARAM],
     )
     def get(self, request, *args, **kwargs):
-        queryset = StudentHifz.objects.all() if is_admin(request.user) else StudentHifz.objects.filter(student__teacher=request.user)
+        user = request.user
+        if is_strict_admin(user):
+            queryset = StudentHifz.objects.all()
+        elif is_manager(user):
+            queryset = StudentHifz.objects.filter(student__teacher__mosque_name=user.mosque_name)
+        else:
+            queryset = StudentHifz.objects.filter(student__teacher=user)
         queryset = (
             queryset
             .select_related("chapter", "student")
@@ -73,10 +79,16 @@ class StudentHifzDetailView(APIView):
 
     def _get_object(self, request, pk):
         try:
-            obj = StudentHifz.objects.select_related("chapter", "student").get(pk=pk)
+            obj = StudentHifz.objects.select_related("chapter", "student__teacher").get(pk=pk)
         except StudentHifz.DoesNotExist:
             return None, Response({"detail": "Hifz entry not found."}, status=status.HTTP_404_NOT_FOUND)
-        if not is_admin(request.user) and obj.student.teacher_id != request.user.id:
+        user = request.user
+        if is_strict_admin(user):
+            pass
+        elif is_manager(user):
+            if obj.student.teacher.mosque_name != user.mosque_name:
+                return None, Response({"detail": "Not yours."}, status=status.HTTP_403_FORBIDDEN)
+        elif obj.student.teacher_id != user.id:
             return None, Response({"detail": "Not yours."}, status=status.HTTP_403_FORBIDDEN)
         return obj, None
 
@@ -129,7 +141,13 @@ class QuranSabrListCreateView(APIView):
         parameters=[SYNC_PARAM],
     )
     def get(self, request, *args, **kwargs):
-        queryset = QuranSabr.objects.all() if is_admin(request.user) else QuranSabr.objects.filter(student__teacher=request.user)
+        user = request.user
+        if is_strict_admin(user):
+            queryset = QuranSabr.objects.all()
+        elif is_manager(user):
+            queryset = QuranSabr.objects.filter(student__teacher__mosque_name=user.mosque_name)
+        else:
+            queryset = QuranSabr.objects.filter(student__teacher=user)
         queryset = (
             queryset
             .select_related("student")

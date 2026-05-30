@@ -18,7 +18,7 @@ from lessons.serializers import (
     BulkAttendancePayloadSerializer,
     AttendanceListResponseSerializer,
 )
-from quranlessons.roles import is_admin, resolve_create_teacher
+from quranlessons.roles import is_admin, is_strict_admin, is_manager, resolve_create_teacher
 from quranlessons.sync import SoftDeleteDestroyMixin, apply_sync_filter
 from students.models import Student
 from students.serializers import StudentSerializer
@@ -52,7 +52,12 @@ class LessonViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Lesson.objects.all() if is_admin(user) else Lesson.objects.filter(teacher=user)
+        if is_strict_admin(user):
+            qs = Lesson.objects.all()
+        elif is_manager(user):
+            qs = Lesson.objects.filter(teacher__mosque_name=user.mosque_name)
+        else:
+            qs = Lesson.objects.filter(teacher=user)
         return apply_sync_filter(qs, self.request)
 
     def perform_create(self, serializer):
@@ -79,7 +84,15 @@ class AttendanceView(APIView):
             return None, Response(
                 {"detail": "Lesson not found"}, status=HTTPStatus.NOT_FOUND,
             )
-        if not is_admin(user) and lesson.teacher_id != user.id:
+        if is_strict_admin(user):
+            pass
+        elif is_manager(user):
+            if lesson.teacher.mosque_name != user.mosque_name:
+                return None, Response(
+                    {"detail": "This lesson does not belong to your mosque."},
+                    status=HTTPStatus.FORBIDDEN,
+                )
+        elif lesson.teacher_id != user.id:
             return None, Response(
                 {"detail": "You can only mark attendances for your own lessons"},
                 status=HTTPStatus.FORBIDDEN,
@@ -126,7 +139,11 @@ class AttendanceView(APIView):
         unique_ids = set(student_ids)
 
         students = Student.objects.filter(id__in=unique_ids)
-        if not is_admin(request.user):
+        if is_strict_admin(request.user):
+            pass
+        elif is_manager(request.user):
+            students = students.filter(teacher__mosque_name=request.user.mosque_name)
+        else:
             students = students.filter(teacher=request.user)
         student_map = {student.id: student for student in students}
         missing_ids = sorted(unique_ids - set(student_map.keys()))
