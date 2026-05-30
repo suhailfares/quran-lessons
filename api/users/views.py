@@ -1,7 +1,6 @@
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.views import APIView
 
 from users.models import User
@@ -15,29 +14,15 @@ from users.serializers import (
 )
 
 
-class RegistrationRateThrottle(SimpleRateThrottle):
-    """
-    Basic IP-based throttle to curb automated sign-ups.
-    """
-    scope = "user-registration"
-
-    def get_cache_key(self, request, view):
-        return self.get_ident(request)
-
-    def get_rate(self):
-        return "5/hour"
-
-
 @extend_schema(
     tags=["Users"],
     summary="Register a teacher account",
-    description="Creates a new teacher record and returns a sanitized representation."
+    description="Creates a new teacher record and returns a sanitized representation. Admins only."
 )
 class UserCreateView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserCreateSerializer
-    permission_classes = [permissions.AllowAny]
-    throttle_classes = [RegistrationRateThrottle]
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
