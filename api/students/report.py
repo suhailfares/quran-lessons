@@ -53,9 +53,11 @@ def _parse_date_param(raw):
 
 
 def _resolve_teachers(request, teacher_id_raw):
-    """Return (teacher_ids: list[int] | None, single_teacher: User | None).
+    """Return (teacher_ids: list[int] | None, single_teacher: User | None,
+               all_teachers: list[User], err: Response | None).
 
     teacher_ids=None means no teacher restriction (strict admin, no teacher_id given).
+    all_teachers is the full list of User objects in scope, used to compute absent teachers.
     """
     user = request.user
 
@@ -63,34 +65,42 @@ def _resolve_teachers(request, teacher_id_raw):
         try:
             tid = int(teacher_id_raw)
         except (ValueError, TypeError):
-            return None, None, Response(
+            return None, None, [], Response(
                 {"detail": "teacher_id must be an integer."},
                 status=HTTPStatus.BAD_REQUEST,
             )
         try:
             teacher = User.objects.get(pk=tid, role="teacher")
         except User.DoesNotExist:
-            return None, None, Response(
+            return None, None, [], Response(
                 {"detail": "Teacher not found."},
                 status=HTTPStatus.NOT_FOUND,
             )
         if is_manager(user) and teacher.mosque_name != user.mosque_name:
-            return None, None, Response(
+            return None, None, [], Response(
                 {"detail": "Teacher does not belong to your mosque."},
                 status=HTTPStatus.FORBIDDEN,
             )
-        return [tid], teacher, None
+        return [tid], teacher, [teacher], None
 
     # No teacher_id provided
     if is_manager(user):
-        ids = list(
+        teachers = list(
             User.objects.filter(role="teacher", mosque_name=user.mosque_name)
-            .values_list("id", flat=True)
         )
-        return ids, None, None
+        return [t.id for t in teachers], None, teachers, None
 
     # Strict admin with no teacher_id → unrestricted
-    return None, None, None
+    teachers = list(User.objects.filter(role="teacher"))
+    return None, None, teachers, None
+
+
+def _serialize_absent_teacher(teacher):
+    return {
+        "teacher_id":   teacher.id,
+        "teacher_name": f"{teacher.first_name} {teacher.last_name}",
+        "mosque_name":  teacher.mosque_name,
+    }
 
 
 def _build_student_entry(student, fields, att_map, hifz_map, hadith_hifz_map,
@@ -230,7 +240,7 @@ class ReportView(APIView):
 
         # --- 3. Resolve teacher scope ---
         teacher_id_raw = request.query_params.get("teacher_id")
-        teacher_ids, single_teacher, err = _resolve_teachers(request, teacher_id_raw)
+        teacher_ids, single_teacher, all_teachers, err = _resolve_teachers(request, teacher_id_raw)
         if err:
             return err
 
@@ -248,6 +258,7 @@ class ReportView(APIView):
                 date_from=date_from,
                 date_to=date_to,
                 single_teacher=single_teacher,
+                all_teachers=all_teachers,
             )
 
         # --- 5. Bulk-fetch domain data ---
@@ -338,10 +349,10 @@ class ReportView(APIView):
         if mode_a:
             return self._mode_a_response(
                 active_students, student_ids, fields, domain_maps,
-                single_teacher, date_from,
+                single_teacher, all_teachers, date_from,
             )
         return self._mode_b_response(
-            active_students, fields, domain_maps, date_from, date_to,
+            active_students, all_teachers, fields, domain_maps, date_from, date_to,
         )
 
     # ------------------------------------------------------------------
@@ -349,7 +360,7 @@ class ReportView(APIView):
     # ------------------------------------------------------------------
 
     def _mode_a_response(self, active_students, all_student_ids, fields,
-                         domain_maps, teacher, date):
+                         domain_maps, teacher, all_teachers, date):
         att_map = domain_maps[0]
 
         # Fetch attendance for lesson grouping (regardless of whether attendance is in fields)
@@ -408,19 +419,26 @@ class ReportView(APIView):
                 ],
             })
 
+        active_teacher_ids = {s.teacher_id for s in active_students if s.teacher_id}
+        absent_teachers = [
+            _serialize_absent_teacher(t)
+            for t in all_teachers if t.id not in active_teacher_ids
+        ]
+
         return Response({
-            "mode":         "single_teacher_single_day",
-            "date":         str(date),
-            "teacher_id":   teacher.id if teacher else None,
-            "teacher_name": f"{teacher.first_name} {teacher.last_name}" if teacher else None,
-            "lessons":      lessons_out,
+            "mode":            "single_teacher_single_day",
+            "date":            str(date),
+            "teacher_id":      teacher.id if teacher else None,
+            "teacher_name":    f"{teacher.first_name} {teacher.last_name}" if teacher else None,
+            "lessons":         lessons_out,
+            "absent_teachers": absent_teachers,
         })
 
     # ------------------------------------------------------------------
     # Mode B
     # ------------------------------------------------------------------
 
-    def _mode_b_response(self, active_students, fields, domain_maps, date_from, date_to):
+    def _mode_b_response(self, active_students, all_teachers, fields, domain_maps, date_from, date_to):
         att_map = domain_maps[0]
 
         # Determine sort field
@@ -441,32 +459,42 @@ class ReportView(APIView):
 
         rows.sort(key=lambda r: len(r.get(sort_field, [])), reverse=True)
 
+        active_teacher_ids = {s.teacher_id for s in active_students if s.teacher_id}
+        absent_teachers = [
+            _serialize_absent_teacher(t)
+            for t in all_teachers if t.id not in active_teacher_ids
+        ]
+
         return Response({
-            "mode":      "range_or_multi_teacher",
-            "date_from": str(date_from),
-            "date_to":   str(date_to),
-            "students":  rows,
+            "mode":            "range_or_multi_teacher",
+            "date_from":       str(date_from),
+            "date_to":         str(date_to),
+            "students":        rows,
+            "absent_teachers": absent_teachers,
         })
 
     # ------------------------------------------------------------------
     # Empty result helpers
     # ------------------------------------------------------------------
 
-    def _empty_response(self, *, mode_a, date_from, date_to, single_teacher):
+    def _empty_response(self, *, mode_a, date_from, date_to, single_teacher, all_teachers):
+        absent = [_serialize_absent_teacher(t) for t in all_teachers]
         if mode_a:
             return Response({
-                "mode":         "single_teacher_single_day",
-                "date":         str(date_from),
-                "teacher_id":   single_teacher.id if single_teacher else None,
-                "teacher_name": (
+                "mode":            "single_teacher_single_day",
+                "date":            str(date_from),
+                "teacher_id":      single_teacher.id if single_teacher else None,
+                "teacher_name":    (
                     f"{single_teacher.first_name} {single_teacher.last_name}"
                     if single_teacher else None
                 ),
-                "lessons": [],
+                "lessons":         [],
+                "absent_teachers": absent,
             })
         return Response({
-            "mode":      "range_or_multi_teacher",
-            "date_from": str(date_from),
-            "date_to":   str(date_to),
-            "students":  [],
+            "mode":            "range_or_multi_teacher",
+            "date_from":       str(date_from),
+            "date_to":         str(date_to),
+            "students":        [],
+            "absent_teachers": absent,
         })
