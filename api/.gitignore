@@ -16,3 +16,7 @@ db.sqlite3
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Claude coding
+CLAUDE.md
+settings.local.json
