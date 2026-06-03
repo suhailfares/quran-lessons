@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import dj_database_url
 from dotenv import load_dotenv
+from datetime import timedelta
 import os
 from pathlib import Path
 
@@ -172,6 +173,11 @@ REST_FRAMEWORK = {
 #    "DEFAULT_AUTHENTICATION_CLASSES": [],
 #    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 #}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME":  timedelta(days=365),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=365),
+}
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Quran Institute API",
