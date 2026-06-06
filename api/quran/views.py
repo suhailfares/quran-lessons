@@ -50,7 +50,7 @@ def _count_memorized_pages(chapter_ranges):
                 if overlap_s <= overlap_e:
                     covered_verses.update(range(overlap_s, overlap_e + 1))
             covered += len(covered_verses)
-        if covered / total >= 0.5:
+        if covered / total >= 0.75:
             count += 1
     return count
 
@@ -252,11 +252,9 @@ class QuranSabrListCreateView(APIView):
         },
         400: {"type": "object"},
     },
-    auth=[],
 )
 class MosqueLeaderboardView(APIView):
-    permission_classes = []
-    authentication_classes = []
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         mosque_name = request.query_params.get("mosque", "").strip()
@@ -265,6 +263,10 @@ class MosqueLeaderboardView(APIView):
                 {"detail": "Query parameter 'mosque' is required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        user = request.user
+        if not is_strict_admin(user) and user.mosque_name != mosque_name:
+            return Response({"detail": "Access denied."}, status=status.HTTP_403_FORBIDDEN)
 
         from_date = request.query_params.get("from", "").strip()
         to_date = request.query_params.get("to", "").strip()

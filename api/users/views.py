@@ -160,6 +160,33 @@ class ManagerCreateView(APIView):
 
 @extend_schema(
     tags=["Users"],
+    summary="List mosques",
+    description="Admins get all mosque names in the system. Managers and teachers get only their own mosque.",
+    responses={200: {"type": "array", "items": {"type": "string"}}},
+)
+class MosqueListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if is_strict_admin(user):
+            mosques = (
+                User.objects.filter(
+                    role__in=["teacher", "manager"],
+                    mosque_name__isnull=False,
+                )
+                .exclude(mosque_name="")
+                .values_list("mosque_name", flat=True)
+                .distinct()
+                .order_by("mosque_name")
+            )
+            return Response(list(mosques))
+        mosque = user.mosque_name or ""
+        return Response([mosque] if mosque else [])
+
+
+@extend_schema(
+    tags=["Users"],
     summary="Change the authenticated user's password",
     description="Requires the current password. All existing sessions are invalidated on success.",
     request=PasswordChangeSerializer,
