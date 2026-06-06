@@ -3,6 +3,7 @@ URL configuration for quranlessons project.
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 from users.jwt import VersionedTokenObtainPairView, VersionedTokenRefreshView
@@ -29,4 +30,5 @@ urlpatterns = [
     path("api/auth/login/refresh/", VersionedTokenRefreshView.as_view(), name="token_refresh"),
     path("api/", include("habits.urls")),
     path("health/", health),
+    path("leaderboard/", TemplateView.as_view(template_name="leaderboard.html"), name="leaderboard"),
 ]

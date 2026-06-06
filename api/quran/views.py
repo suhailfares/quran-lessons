@@ -1,4 +1,8 @@
 # quran/views.py
+import json
+from collections import defaultdict
+from pathlib import Path
+
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
@@ -17,6 +21,38 @@ from quran.serializers import (
 )
 from quranlessons.roles import is_admin, is_strict_admin, is_manager
 from quranlessons.sync import apply_sync_filter
+
+_QURAN_PAGES_DATA = json.loads(
+    (Path(__file__).parent / "quran_pages.json").read_text(encoding="utf-8")
+)["pages"]
+
+
+def _count_memorized_pages(chapter_ranges):
+    """
+    chapter_ranges: {chapter_index: [(start_verse, end_verse), ...]}
+    Returns count of pages where the student's entries cover >= 50% of the page's verses.
+    Uses a set-union per chapter segment to avoid double-counting overlapping entries.
+    """
+    count = 0
+    for page in _QURAN_PAGES_DATA:
+        total = page["verses_count"]
+        covered = 0
+        for chapter_str, range_str in page["verse_mapping"].items():
+            chapter_idx = int(chapter_str)
+            if chapter_idx not in chapter_ranges:
+                continue
+            parts = range_str.split("-")
+            page_start, page_end = int(parts[0]), int(parts[1])
+            covered_verses = set()
+            for s, e in chapter_ranges[chapter_idx]:
+                overlap_s = max(s, page_start)
+                overlap_e = min(e, page_end)
+                if overlap_s <= overlap_e:
+                    covered_verses.update(range(overlap_s, overlap_e + 1))
+            covered += len(covered_verses)
+        if covered / total >= 0.5:
+            count += 1
+    return count
 
 
 SYNC_PARAM = OpenApiParameter(
@@ -170,3 +206,117 @@ class QuranSabrListCreateView(APIView):
         return Response(_serialize_quran_sabr(obj), status=status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    tags=["Leaderboard"],
+    summary="Mosque memorization leaderboard",
+    description=(
+        "Returns students memorizing Quran in the given mosque, sorted descending by pages memorized. "
+        "A page counts if the student's memorization entries (label=حفظ) within the date range "
+        "cover >= 50% of that page's verses according to the standard Mushaf layout. "
+        "No authentication required."
+    ),
+    parameters=[
+        OpenApiParameter(
+            name="mosque",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            required=True,
+            description="Exact mosque name to filter by.",
+        ),
+        OpenApiParameter(
+            name="from",
+            type=OpenApiTypes.DATE,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Start date (YYYY-MM-DD). Filters by lesson date >= from.",
+        ),
+        OpenApiParameter(
+            name="to",
+            type=OpenApiTypes.DATE,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="End date (YYYY-MM-DD). Filters by lesson date <= to.",
+        ),
+    ],
+    responses={
+        200: {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "student_name": {"type": "string"},
+                    "teacher_name": {"type": "string"},
+                    "pages": {"type": "integer"},
+                },
+            },
+        },
+        400: {"type": "object"},
+    },
+    auth=[],
+)
+class MosqueLeaderboardView(APIView):
+    permission_classes = []
+    authentication_classes = []
+
+    def get(self, request):
+        mosque_name = request.query_params.get("mosque", "").strip()
+        if not mosque_name:
+            return Response(
+                {"detail": "Query parameter 'mosque' is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from_date = request.query_params.get("from", "").strip()
+        to_date = request.query_params.get("to", "").strip()
+
+        queryset = StudentHifz.objects.filter(
+            is_deleted=False,
+            label=StudentHifz.Label.MEMORIZATION,
+            student__is_deleted=False,
+            student__teacher__mosque_name=mosque_name,
+            student__teacher__role="teacher",
+        )
+        if from_date:
+            queryset = queryset.filter(created_at__date__gte=from_date)
+        if to_date:
+            queryset = queryset.filter(created_at__date__lte=to_date)
+
+        entries = queryset.values(
+            "student_id",
+            "student__first_name",
+            "student__last_name",
+            "student__teacher__first_name",
+            "student__teacher__last_name",
+            "chapter__index",
+            "start_verse",
+            "end_verse",
+        )
+
+        student_info = {}
+        student_ranges = defaultdict(lambda: defaultdict(list))
+
+        for entry in entries:
+            sid = entry["student_id"]
+            if sid not in student_info:
+                student_info[sid] = {
+                    "student_name": f"{entry['student__first_name']} {entry['student__last_name']}",
+                    "teacher_name": f"{entry['student__teacher__first_name']} {entry['student__teacher__last_name']}",
+                }
+            student_ranges[sid][entry["chapter__index"]].append(
+                (entry["start_verse"], entry["end_verse"])
+            )
+
+        results = sorted(
+            [
+                {
+                    "student_name": info["student_name"],
+                    "teacher_name": info["teacher_name"],
+                    "pages": _count_memorized_pages(student_ranges[sid]),
+                }
+                for sid, info in student_info.items()
+            ],
+            key=lambda x: x["pages"],
+            reverse=True,
+        )
+
+        return Response(results, status=status.HTTP_200_OK)
