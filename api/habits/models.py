@@ -17,6 +17,8 @@ class Habit(models.Model):
     )
     points = models.IntegerField(default=1)
     minusPoints = models.IntegerField(default=0)
+    allowNegative = models.BooleanField(default=False)
+    oncePerDay = models.BooleanField(default=False)
 
     updated_at = models.DateTimeField(auto_now=True)
     is_deleted = models.BooleanField(default=False)

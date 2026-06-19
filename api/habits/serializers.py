@@ -8,7 +8,7 @@ class HabitSerializer(TeacherAssignableSerializerMixin):
     class Meta:
         model = Habit
         fields = [
-            "id", "name", "description", "points", "minusPoints", "teacher",
+            "id", "name", "description", "points", "minusPoints", "allowNegative", "oncePerDay", "teacher",
             "updated_at", "is_deleted",
         ]
         read_only_fields = ["updated_at", "is_deleted"]
