@@ -57,6 +57,7 @@ class StudentHifz(models.Model):
         MEMORIZATION = "حفظ", "حفظ"
         REVIEW = "مراجعة", "مراجعة"
         CONSOLIDATION = "تثبيت", "تثبيت"
+        OLD_HIFZ = "حفظ سابق", "حفظ سابق"
 
     id = models.AutoField(primary_key=True)
     student = models.ForeignKey(
