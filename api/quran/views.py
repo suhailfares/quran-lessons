@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from quran.models import StudentHifz, QuranSabr
+from quran.models import StudentHifz, UserHifz, QuranSabr, Verse
 from quran.permissions import IsTeacher
 from quran.serializers import (
     StudentHifzCreateSerializer,
@@ -18,6 +18,8 @@ from quran.serializers import (
     StudentHifzUpdateSerializer,
     QuranSabrCreateSerializer,
     QuranSabrSerializer,
+    UserHifzJuzRangeCreateSerializer,
+    UserHifzSerializer,
 )
 from quranlessons.roles import is_admin, is_strict_admin, is_manager
 from quranlessons.sync import apply_sync_filter
@@ -322,3 +324,83 @@ class MosqueLeaderboardView(APIView):
         )
 
         return Response(results, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["User Hifz"])
+class UserHifzView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        responses={
+            200: {
+                "type": "array",
+                "items": {
+                    "type": "array",
+                    "items": {"type": "integer"},
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "example": [1, 5],
+                },
+            }
+        },
+        summary="List own hifz as merged juz ranges",
+        description=(
+            "Returns the user's memorized juz as a list of merged, contiguous ranges. "
+            "For example, entries covering juz 1-4 and 3-5 are returned as [[1, 5]]."
+        ),
+    )
+    def get(self, request):
+        entries = list(
+            UserHifz.objects
+            .filter(user=request.user, is_deleted=False)
+            .values("chapter_id", "start_verse", "end_verse")
+        )
+        if not entries:
+            return Response([], status=status.HTTP_200_OK)
+
+        from django.db.models import Q
+        q = Q()
+        for e in entries:
+            q |= Q(
+                chapter_id=e["chapter_id"],
+                index__gte=e["start_verse"],
+                index__lte=e["end_verse"],
+            )
+
+        covered = sorted(
+            Verse.objects.filter(q)
+            .values_list("part__index", flat=True)
+            .distinct()
+        )
+
+        if not covered:
+            return Response([], status=status.HTTP_200_OK)
+
+        ranges = []
+        start = end = covered[0]
+        for juz in covered[1:]:
+            if juz == end + 1:
+                end = juz
+            else:
+                ranges.append([start, end])
+                start = end = juz
+        ranges.append([start, end])
+
+        return Response(ranges, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        request=UserHifzJuzRangeCreateSerializer,
+        responses={201: UserHifzSerializer(many=True)},
+        summary="Create own hifz by juz range",
+        description=(
+            "Creates hifz entries for the authenticated user covering all chapters "
+            "within the given juz range. Each chapter gets one entry with the verse "
+            "range that falls inside the requested juz."
+        ),
+    )
+    def post(self, request):
+        ser = UserHifzJuzRangeCreateSerializer(data=request.data, context={"request": request})
+        ser.is_valid(raise_exception=True)
+        entries = ser.save()
+        data = [UserHifzSerializer(e).data for e in entries]
+        return Response(data, status=status.HTTP_201_CREATED)

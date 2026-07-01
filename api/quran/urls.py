@@ -5,6 +5,7 @@ from quran.views import (
     QuranSabrListCreateView,
     StudentHifzDetailView,
     StudentHifzListCreateView,
+    UserHifzView,
 )
 
 urlpatterns = [
@@ -12,4 +13,5 @@ urlpatterns = [
     path("hifz/<int:pk>/", StudentHifzDetailView.as_view(), name="student-hifz-detail"),
     path("sabr/", QuranSabrListCreateView.as_view(), name="quran-sabr"),
     path("leaderboard/", MosqueLeaderboardView.as_view(), name="mosque-leaderboard"),
+    path("user-hifz/", UserHifzView.as_view(), name="user-hifz"),
 ]

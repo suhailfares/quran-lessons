@@ -95,6 +95,45 @@ class StudentHifz(models.Model):
         return f"{self.student} | {self.chapter.title} {self.start_verse}-{self.end_verse}"
 
 
+class UserHifz(models.Model):
+    class Label(models.TextChoices):
+        MEMORIZATION = "حفظ", "حفظ"
+        REVIEW = "مراجعة", "مراجعة"
+        CONSOLIDATION = "تثبيت", "تثبيت"
+        OLD_HIFZ = "حفظ سابق", "حفظ سابق"
+
+    user = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+        related_name="hifz_entries",
+    )
+    chapter = models.ForeignKey(
+        Chapter,
+        on_delete=models.PROTECT,
+        related_name="user_hifz_entries",
+    )
+    start_verse = models.PositiveIntegerField(default=1)
+    end_verse = models.PositiveIntegerField(default=1)
+    label = models.CharField(
+        max_length=16,
+        choices=Label.choices,
+        default=Label.MEMORIZATION,
+    )
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "user_hifz"
+        indexes = [
+            models.Index(fields=["user", "chapter"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user} | {self.chapter.title} {self.start_verse}-{self.end_verse}"
+
+
 class QuranSabr(models.Model):
     class Type(models.TextChoices):
         AWQAF = "سبر الأوقاف", "سبر الأوقاف"

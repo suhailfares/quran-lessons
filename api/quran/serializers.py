@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from quran.models import Chapter, StudentHifz, QuranSabr
+from quran.models import Chapter, StudentHifz, UserHifz, QuranSabr, Verse
 from quranlessons.roles import is_strict_admin, is_manager
 from students.models import Student
 
@@ -182,5 +182,76 @@ class QuranSabrSerializer(serializers.Serializer):
 
     def get_range(self, obj):
         return [obj.range_start, obj.range_end]
+
+
+class UserHifzJuzRangeCreateSerializer(serializers.Serializer):
+    juz_range = serializers.ListField(
+        child=serializers.IntegerField(min_value=1, max_value=30),
+        min_length=2,
+        max_length=2,
+    )
+    label = serializers.ChoiceField(choices=UserHifz.Label.choices, required=False)
+    notes = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    date = serializers.DateTimeField(required=False)
+
+    def validate_juz_range(self, value):
+        if value[0] > value[1]:
+            raise serializers.ValidationError("First juz must be <= second juz.")
+        return value
+
+    def create(self, validated_data):
+        from django.utils import timezone
+        user = self.context["request"].user
+        juz_start, juz_end = validated_data["juz_range"]
+        label = validated_data.get("label", UserHifz.Label.MEMORIZATION)
+        notes = validated_data.get("notes")
+        date = validated_data.get("date", timezone.now())
+
+        verses = (
+            Verse.objects
+            .filter(part__index__range=(juz_start, juz_end))
+            .select_related("chapter")
+            .order_by("chapter__index", "index")
+        )
+
+        chapter_ranges = {}
+        for verse in verses:
+            c_idx = verse.chapter.index
+            v_idx = verse.index
+            if c_idx not in chapter_ranges:
+                chapter_ranges[c_idx] = {"chapter": verse.chapter, "min": v_idx, "max": v_idx}
+            else:
+                if v_idx < chapter_ranges[c_idx]["min"]:
+                    chapter_ranges[c_idx]["min"] = v_idx
+                if v_idx > chapter_ranges[c_idx]["max"]:
+                    chapter_ranges[c_idx]["max"] = v_idx
+
+        entries = [
+            UserHifz(
+                user=user,
+                chapter=data["chapter"],
+                start_verse=data["min"],
+                end_verse=data["max"],
+                label=label,
+                notes=notes,
+                created_at=date,
+            )
+            for _, data in sorted(chapter_ranges.items())
+        ]
+        UserHifz.objects.bulk_create(entries)
+        return entries
+
+
+class UserHifzSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    user_id = serializers.IntegerField()
+    chapter_index = serializers.IntegerField(source="chapter.index")
+    start = serializers.IntegerField(source="start_verse")
+    end = serializers.IntegerField(source="end_verse")
+    notes = serializers.CharField(allow_blank=True, allow_null=True)
+    label = serializers.CharField()
+    date = serializers.DateTimeField(source="created_at")
+    updated_at = serializers.DateTimeField(read_only=True)
+    is_deleted = serializers.BooleanField(read_only=True)
 
 
